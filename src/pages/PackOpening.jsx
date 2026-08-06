@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, History, ChevronRight } from "lucide-react";
 import PackReveal from "@/components/pokemon/PackReveal";
-import { getSets, getSetCards, buildPack, getCardPrice } from "@/lib/pokemonApi";
+import { getSets, getSetCards, buildPack, getCardPrice, getChaseCardIds } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function PackOpening() {
@@ -12,6 +12,7 @@ export default function PackOpening() {
   const [selectedSet, setSelectedSet] = useState(null);
   const [opening, setOpening] = useState(false);
   const [pack, setPack] = useState(null);
+  const [chaseIds, setChaseIds] = useState(new Set());
   const [history, setHistory] = useState([]);
   const cacheRef = useRef({});
   const { toast } = useToast();
@@ -36,6 +37,7 @@ export default function PackOpening() {
       if (!cards) { cards = await getSetCards(selectedSet.id); cacheRef.current[selectedSet.id] = cards; }
       const newPack = buildPack(cards);
       const value = newPack.reduce((s, c) => s + getCardPrice(c), 0);
+      setChaseIds(getChaseCardIds(cards));
       await base44.entities.PackHistory.create({
         set_id: selectedSet.id, set_name: selectedSet.name,
         cards: newPack.map((c) => ({ card_id: c.id, name: c.name, image: c.images?.small, rarity: c.rarity, price: getCardPrice(c) })),
@@ -125,7 +127,7 @@ export default function PackOpening() {
         )}
       </section>
 
-      {pack && <PackReveal pack={pack} setName={selectedSet?.name} onAddAll={addAll} onClose={() => setPack(null)} />}
+      {pack && <PackReveal pack={pack} setName={selectedSet?.name} chaseIds={chaseIds} onAddAll={addAll} onClose={() => setPack(null)} />}
     </div>
   );
 }
