@@ -95,7 +95,7 @@ export default function PackOpening() {
         <div className="flex-1">
           <div className="text-sm text-slate-400">Opening</div>
           <div className="font-bold text-xl">{selectedSet?.name}</div>
-          <div className="text-xs text-slate-500 mt-1">11 cards · rarity-weighted · value tracked</div>
+          <div className="text-xs text-slate-500 mt-1">10 cards · rarity-weighted · realistic pull rates</div>
         </div>
         <Button size="lg" disabled={opening || !selectedSet} onClick={openPack}
           className="bg-gradient-to-r from-emerald-400 to-blue-500 hover:opacity-90 text-[#0e1014] font-semibold">

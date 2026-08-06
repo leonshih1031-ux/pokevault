@@ -2,10 +2,10 @@ import { useEffect, useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, Plus, Loader2, TrendingUp, TrendingDown, Layers } from "lucide-react";
+import { Search as SearchIcon, Plus, Loader2, TrendingUp, TrendingDown, Layers, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import EditCollectionModal from "@/components/pokemon/EditCollectionModal";
-import { getSets, getRarityStyle, CONDITIONS } from "@/lib/pokemonApi";
+import { getSets, getRarityStyle, CONDITIONS, fetchCardPrices } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
 
 const money = (n) => `$${(n || 0).toFixed(2)}`;
@@ -18,6 +18,7 @@ export default function Binder() {
   const [setFilter, setSetFilter] = useState("all");
   const [condFilter, setCondFilter] = useState("all");
   const [editing, setEditing] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,6 +58,21 @@ export default function Binder() {
   const refresh = async () => { const list = await base44.entities.CollectionCard.list("-updated_date", 500); setItems(list); };
   const onSaved = async () => { setEditing(null); await refresh(); };
 
+  const refreshPrices = async () => {
+    setRefreshing(true);
+    try {
+      const ids = items.map((i) => i.card_id).filter(Boolean);
+      const prices = await fetchCardPrices(ids);
+      const updates = items
+        .filter((i) => prices[i.card_id] != null && prices[i.card_id] !== i.current_price)
+        .map((i) => ({ id: i.id, current_price: prices[i.card_id] }));
+      if (updates.length) await base44.entities.CollectionCard.bulkUpdate(updates);
+      await refresh();
+      toast({ title: `Updated ${updates.length} card price${updates.length === 1 ? "" : "s"}` });
+    } catch { toast({ title: "Price refresh failed", variant: "destructive" }); }
+    finally { setRefreshing(false); }
+  };
+
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="w-6 h-6 animate-spin text-slate-500" /></div>;
 
   return (
@@ -66,7 +82,12 @@ export default function Binder() {
           <div className="text-xs uppercase tracking-widest text-emerald-400 flex items-center gap-1.5"><Layers className="w-3.5 h-3.5" /> Portfolio</div>
           <h1 className="font-bold text-2xl md:text-3xl">Your Binder</h1>
         </div>
-        <Link to="/search"><Button variant="secondary" className="bg-white/5"><Plus className="w-4 h-4 mr-1.5" /> Add Cards</Button></Link>
+        <div className="flex gap-2">
+          <Button variant="secondary" className="bg-white/5" onClick={refreshPrices} disabled={refreshing || items.length === 0}>
+            <RefreshCw className={`w-4 h-4 mr-1.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh Prices
+          </Button>
+          <Link to="/search"><Button variant="secondary" className="bg-white/5"><Plus className="w-4 h-4 mr-1.5" /> Add Cards</Button></Link>
+        </div>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
