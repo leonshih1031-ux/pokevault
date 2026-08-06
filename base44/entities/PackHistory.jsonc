@@ -1,0 +1,39 @@
+{
+  "name": "PackHistory",
+  "type": "object",
+  "properties": {
+    "set_id": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "cards": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "total_value": {
+      "type": "number"
+    },
+    "opened_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "set_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

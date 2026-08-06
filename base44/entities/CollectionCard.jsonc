@@ -1,0 +1,117 @@
+{
+  "name": "CollectionCard",
+  "type": "object",
+  "properties": {
+    "card_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "set_id": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "number": {
+      "type": "string"
+    },
+    "image_small": {
+      "type": "string"
+    },
+    "image_large": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string"
+    },
+    "types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "supertype": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "integer",
+      "default": 1
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "Mint",
+        "Near Mint",
+        "Lightly Played",
+        "Moderately Played",
+        "Heavily Played",
+        "Damaged"
+      ],
+      "default": "Near Mint"
+    },
+    "variant": {
+      "type": "string",
+      "enum": [
+        "Normal",
+        "Reverse Holo",
+        "Holo",
+        "1st Edition",
+        "Promo"
+      ],
+      "default": "Normal"
+    },
+    "language": {
+      "type": "string",
+      "default": "English"
+    },
+    "grading_company": {
+      "type": "string",
+      "enum": [
+        "Raw",
+        "PSA",
+        "BGS",
+        "CGC",
+        "ACE",
+        "Other"
+      ],
+      "default": "Raw"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "purchase_price": {
+      "type": "number"
+    },
+    "date_acquired": {
+      "type": "string",
+      "format": "date"
+    },
+    "current_price": {
+      "type": "number"
+    },
+    "folder": {
+      "type": "string",
+      "default": "Main"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "card_id",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
