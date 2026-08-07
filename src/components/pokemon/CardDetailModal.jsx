@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { getCardPrice, getRarityStyle, CONDITIONS, VARIANTS } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
 import PriceChart from "@/components/pokemon/PriceChart";
+import { autoTickFromBinder } from "@/lib/setlist";
 
 export default function CardDetailModal({ card, open, onOpenChange }) {
   const [qty, setQty] = useState(1);
@@ -35,6 +36,7 @@ export default function CardDetailModal({ card, open, onOpenChange }) {
         purchase_price: Number(price) || 0, date_acquired: today, current_price: getCardPrice(card), folder: "Main",
       });
       toast({ title: "Added to binder" });
+      autoTickFromBinder([card]);
       onOpenChange(false);
     } catch { toast({ title: "Could not add", variant: "destructive" }); }
     finally { setBusy(false); }

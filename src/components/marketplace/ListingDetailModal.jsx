@@ -1,0 +1,81 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Trash2, Pencil, BadgeCheck, MapPin, Truck, Mail, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { getRarityStyle } from "@/lib/pokemonApi";
+import { useToast } from "@/components/ui/use-toast";
+
+export default function ListingDetailModal({ open, onOpenChange, listing, mine, onChanged, onEdit }) {
+  const [busy, setBusy] = useState(false);
+  const { toast } = useToast();
+  if (!listing) return null;
+  const style = getRarityStyle(listing.rarity);
+
+  const markSold = async () => {
+    setBusy(true);
+    try {
+      await base44.entities.MarketplaceListing.update(listing.id, { status: "sold" });
+      toast({ title: "Marked as sold" });
+      onChanged?.();
+      onOpenChange(false);
+    } catch {
+      toast({ title: "Could not update", variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await base44.entities.MarketplaceListing.delete(listing.id);
+      toast({ title: "Listing removed" });
+      onChanged?.();
+      onOpenChange(false);
+    } catch {
+      toast({ title: "Could not delete", variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-[#181b22] border-white/10 text-slate-100 max-w-2xl">
+        <DialogHeader><DialogTitle className="font-display">{listing.name}</DialogTitle></DialogHeader>
+        <div className="grid md:grid-cols-[220px_1fr] gap-5">
+          <div>
+            <div className="rounded-xl overflow-hidden border border-white/10" style={{ boxShadow: `0 0 30px ${style.glow}` }}>
+              <img src={listing.image_large || listing.image_small} alt={listing.name} className="w-full" />
+            </div>
+            <div className="mt-2 text-xs text-slate-500">{listing.set_name} · #{listing.number}</div>
+            <div className="text-xs font-medium" style={{ color: style.color }}>{listing.rarity}</div>
+          </div>
+          <div className="space-y-3">
+            <div className="text-3xl font-bold text-emerald-400">${(listing.asking_price || 0).toFixed(2)}</div>
+            <div className="flex flex-wrap gap-2 text-[11px]">
+              <span className="px-2 py-1 rounded bg-white/5">{listing.condition}</span>
+              <span className="px-2 py-1 rounded bg-white/5">{listing.variant}</span>
+              {listing.grading_company && listing.grading_company !== "Raw" && <span className="px-2 py-1 rounded bg-white/5">{listing.grading_company}{listing.grade ? ` ${listing.grade}` : ""}</span>}
+              <span className="px-2 py-1 rounded bg-white/5">{listing.language || "English"}</span>
+            </div>
+            {listing.description && <p className="text-sm text-slate-300">{listing.description}</p>}
+            <div className="space-y-1 text-xs text-slate-400">
+              {listing.location && <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {listing.location}</div>}
+              {listing.shipping && <div className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> {listing.shipping}</div>}
+              <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Contact seller: {listing.created_by || "—"}</div>
+            </div>
+          </div>
+        </div>
+        {mine && (
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button variant="ghost" onClick={() => onEdit?.(listing)} disabled={busy} className="text-slate-300"><Pencil className="w-4 h-4 mr-1.5" /> Edit</Button>
+            <Button variant="ghost" onClick={markSold} disabled={busy} className="text-emerald-300">{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><BadgeCheck className="w-4 h-4 mr-1.5" /> Mark Sold</>}</Button>
+            <Button variant="ghost" onClick={remove} disabled={busy} className="text-red-300"><Trash2 className="w-4 h-4 mr-1.5" /> Delete</Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

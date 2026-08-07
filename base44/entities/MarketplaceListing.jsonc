@@ -1,0 +1,110 @@
+{
+  "name": "MarketplaceListing",
+  "type": "object",
+  "properties": {
+    "card_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "set_id": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "number": {
+      "type": "string"
+    },
+    "image_small": {
+      "type": "string"
+    },
+    "image_large": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "Mint",
+        "Near Mint",
+        "Lightly Played",
+        "Moderately Played",
+        "Heavily Played",
+        "Damaged"
+      ],
+      "default": "Near Mint"
+    },
+    "variant": {
+      "type": "string",
+      "enum": [
+        "Normal",
+        "Reverse Holo",
+        "Holo",
+        "1st Edition",
+        "Promo"
+      ],
+      "default": "Normal"
+    },
+    "language": {
+      "type": "string",
+      "default": "English"
+    },
+    "grading_company": {
+      "type": "string",
+      "enum": [
+        "Raw",
+        "PSA",
+        "BGS",
+        "CGC",
+        "ACE",
+        "Other"
+      ],
+      "default": "Raw"
+    },
+    "grade": {
+      "type": "string"
+    },
+    "asking_price": {
+      "type": "number"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "sold",
+        "removed"
+      ],
+      "default": "active"
+    },
+    "location": {
+      "type": "string"
+    },
+    "shipping": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "card_id",
+    "name",
+    "asking_price"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, History, ChevronRight } from "lucide-react";
 import PackReveal from "@/components/pokemon/PackReveal";
 import { getSets, getSetCards, buildPack, getCardPrice, getChaseCardIds } from "@/lib/pokemonApi";
+import { autoTickFromBinder } from "@/lib/setlist";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function PackOpening() {
@@ -59,6 +60,7 @@ export default function PackOpening() {
         purchase_price: getCardPrice(c), date_acquired: today, current_price: getCardPrice(c), folder: "Main",
       })));
       toast({ title: `Added ${cards.length} cards to your binder` });
+      autoTickFromBinder(cards);
       setPack(null);
     } catch { toast({ title: "Could not add cards", variant: "destructive" }); }
   };

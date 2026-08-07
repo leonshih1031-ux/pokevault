@@ -1,0 +1,46 @@
+{
+  "name": "SetChecklist",
+  "type": "object",
+  "properties": {
+    "set_id": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "card_id": {
+      "type": "string"
+    },
+    "card_number": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "image_small": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string"
+    },
+    "date_checked": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "set_id",
+    "card_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

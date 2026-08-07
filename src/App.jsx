@@ -13,6 +13,8 @@ import PackOpening from '@/pages/PackOpening';
 import Binder from '@/pages/Binder';
 import SearchPage from '@/pages/Search';
 import Wishlist from '@/pages/Wishlist';
+import Marketplace from '@/pages/Marketplace';
+import SetList from '@/pages/SetList';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,6 +48,8 @@ const AuthenticatedApp = () => {
         <Route path="/binder" element={<Binder />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="/setlist" element={<SetList />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
