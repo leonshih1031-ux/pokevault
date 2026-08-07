@@ -6,12 +6,26 @@ import confetti from "canvas-confetti";
 import { getCardPrice, getRarityStyle } from "@/lib/pokemonApi";
 import { playShiny } from "@/lib/sound";
 
-function CardBack({ label }) {
+// A single face-up card front (the only card surface shown — no card backs).
+function CardFront({ card, size = "lg" }) {
+  const cs = getRarityStyle(card.rarity);
+  const isChase = card.__chase;
+  const img = size === "lg" ? (card.images?.large || card.images?.small) : card.images?.small;
   return (
-    <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900 border border-white/10 grid place-items-center overflow-hidden">
-      <div className="absolute inset-0 pk-shimmer" />
-      <div className="relative w-11 h-11 rounded-full bg-white/10 grid place-items-center font-bold text-white text-lg">P</div>
-      <div className="absolute bottom-2 text-[9px] uppercase tracking-widest text-white/40">{label}</div>
+    <div className="relative w-full h-full rounded-xl overflow-hidden border border-white/10 bg-[#1a1d24]">
+      <img src={img} alt={card.name} className="w-full h-full object-cover" />
+      <div className="absolute inset-0 ring-2 ring-inset rounded-xl" style={{ boxShadow: `inset 0 0 30px ${cs.glow}` }} />
+      {size === "lg" && (
+        <>
+          <div className="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide" style={{ color: cs.color, background: "rgba(0,0,0,0.7)" }}>{card.rarity || "Card"}</div>
+          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/75 text-xs font-semibold text-emerald-400">${getCardPrice(card).toFixed(2)}</div>
+          {isChase && (
+            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-400 text-[10px] font-extrabold text-black flex items-center gap-1 animate-pulse">
+              <Sparkles className="w-3 h-3" /> CHASE
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -19,10 +33,8 @@ function CardBack({ label }) {
 export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose }) {
   const [pos, setPos] = useState(0);          // next index to pull from the deck
   const [current, setCurrent] = useState(null);
-  const [flipped, setFlipped] = useState(false);
   const [revealed, setRevealed] = useState([]);
   const celebrated = useRef(new Set());
-  const pullToken = useRef(0);
 
   const remaining = pack.length - pos;
   const allDone = pos === pack.length && !current;
@@ -41,35 +53,26 @@ export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose 
     })();
   };
 
-  const flipAfter = (card, token) => {
-    setTimeout(() => {
-      if (pullToken.current !== token) return;
-      setFlipped(true);
-      if (chaseIds?.has(card.id)) celebrate(card);
-    }, 400);
+  const pull = (card) => {
+    setCurrent(card);
+    if (chaseIds?.has(card.id)) celebrate(card);
   };
 
   const clickDeck = () => {
     if (allDone) return;
-    pullToken.current += 1; // cancel any pending flip from a rapid previous click
     if (current) {
       // settle the center card into the revealed row, then pull the next one
       setRevealed((r) => [...r, current]);
       setCurrent(null);
-      setFlipped(false);
       if (pos < pack.length) {
         const card = pack[pos];
-        const token = pullToken.current;
         setPos(pos + 1);
-        setCurrent(card);
-        flipAfter(card, token);
+        pull(card);
       }
     } else if (pos < pack.length) {
       const card = pack[pos];
-      const token = pullToken.current;
       setPos(pos + 1);
-      setCurrent(card);
-      flipAfter(card, token);
+      pull(card);
     }
   };
 
@@ -79,12 +82,13 @@ export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose 
     setRevealed((r) => [...r, ...rest]);
     setPos(pack.length);
     setCurrent(null);
-    setFlipped(false);
     rest.forEach((c) => { if (chaseIds?.has(c.id)) celebrate(c); });
   };
 
   const currentStyle = current ? getRarityStyle(current.rarity) : null;
-  const isChase = current && chaseIds?.has(current.id);
+
+  // The face-up deck: remaining cards stacked, the next-to-pull on top.
+  const stackCards = !allDone && remaining > 0 ? pack.slice(pos, pos + Math.min(remaining, 4)) : [];
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col pk-fade-in">
@@ -103,41 +107,28 @@ export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose 
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 overflow-auto">
-        {/* Center stage: deck stack + the card being pulled */}
+        {/* Center stage: face-up deck stack + the card being pulled */}
         <div
           onClick={!allDone ? clickDeck : undefined}
           className={`relative w-52 h-72 md:w-64 md:h-96 ${!allDone ? "cursor-pointer" : ""}`}
         >
-          {/* deck backs (the stack facing the user) */}
-          {!allDone && remaining > 0 && Array.from({ length: Math.min(remaining, 5) }).map((_, i) => (
-            <div key={"deck" + i} className="absolute inset-0" style={{ transform: `translateY(${i * -3}px) translateX(${i * 2}px)`, zIndex: 5 + i }}>
-              <CardBack label={setName} />
+          {/* face-up deck: next-to-pull on top, a few behind for depth */}
+          {stackCards.map((card, i) => (
+            <div key={pos + i} className="absolute inset-0" style={{ transform: `translateY(${i * 4}px) translateX(${i * -3}px) scale(${1 - i * 0.02})`, zIndex: 10 - i, opacity: 1 - i * 0.12 }}>
+              <CardFront card={{ ...card, __chase: chaseIds?.has(card.id) }} size="lg" />
             </div>
           ))}
 
-          {/* the card lifted off the stack, flipping to reveal */}
+          {/* the card lifted off the stack, facing us */}
           {current && (
             <motion.div
               key={pos}
-              className="absolute inset-0 z-20 pk-card-3d"
+              className="absolute inset-0 z-20"
               initial={{ y: 0, scale: 1 }}
-              animate={{ y: -36, scale: 1.08 }}
+              animate={{ y: -40, scale: 1.12 }}
               transition={{ type: "spring", stiffness: 240, damping: 20 }}
             >
-              <div className={`pk-card-inner relative w-full h-full ${flipped ? "pk-card-flipped" : ""}`}>
-                <div className="pk-card-face absolute inset-0"><CardBack label={setName} /></div>
-                <div className="pk-card-face pk-card-back absolute inset-0 rounded-xl overflow-hidden border border-white/10 bg-[#1a1d24]">
-                  <img src={current.images?.large || current.images?.small} alt={current.name} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 ring-2 ring-inset rounded-xl" style={{ boxShadow: `inset 0 0 30px ${currentStyle.glow}` }} />
-                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide" style={{ color: currentStyle.color, background: "rgba(0,0,0,0.7)" }}>{current.rarity || "Card"}</div>
-                  <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/75 text-xs font-semibold text-emerald-400">${getCardPrice(current).toFixed(2)}</div>
-                  {isChase && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-400 text-[10px] font-extrabold text-black flex items-center gap-1 animate-pulse">
-                      <Sparkles className="w-3 h-3" /> CHASE
-                    </div>
-                  )}
-                </div>
-              </div>
+              <CardFront card={{ ...current, __chase: chaseIds?.has(current.id) }} size="lg" />
             </motion.div>
           )}
 
