@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Loader2, ListChecks, CheckCheck } from "lucide-react";
 import { getSets } from "@/lib/pokemonApi";
 import { Switch } from "@/components/ui/switch";
-import { getAutoTickSetting, setAutoTickSetting } from "@/lib/setlist";
+import { getAutoTickSetting, setAutoTickSetting, backTickFromBinder, unTickFromBinder } from "@/lib/setlist";
 import { useToast } from "@/components/ui/use-toast";
 import SetChecklistView from "@/components/setlist/SetChecklistView";
 
@@ -36,7 +36,15 @@ export default function SetList() {
     try {
       await setAutoTickSetting(on);
       setAutoTick(on);
-      toast({ title: on ? "Auto-tick enabled" : "Auto-tick disabled" });
+      if (on) {
+        const { created } = await backTickFromBinder();
+        await loadCounts();
+        toast({ title: created ? `Auto-tick enabled · ${created} cards ticked` : "Auto-tick enabled" });
+      } else {
+        await unTickFromBinder();
+        await loadCounts();
+        toast({ title: "Auto-tick disabled · binder cards unticked" });
+      }
     } catch {
       toast({ title: "Could not save setting", variant: "destructive" });
     } finally {
