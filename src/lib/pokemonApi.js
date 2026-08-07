@@ -164,19 +164,13 @@ export async function getSetCards(setId) {
   return all;
 }
 
-// Price: prefer cardmarket's average sold price (most accurate), fall back to its
-// rolling averages. For tcgplayer use the LOWEST market price across variants so
-// a stray holofoil/reverse entry can't inflate a Common (the $80-Bulbasaur bug).
+// Price: prefer TCGplayer's market price (reliable, native USD). Cardmarket data
+// is occasionally wildly inflated for popular commons (e.g. 151 Bulbasaur #1
+// reports €79.89 for a $0.25 card), so it's a fallback only. Across TCGplayer
+// variants we take the LOWEST market so a holofoil/reverse entry can't inflate a
+// Common.
 export function getCardPrice(card) {
   if (!card) return 0;
-  const cm = card.cardmarket?.prices;
-  if (cm) {
-    if (cm.averageSellPrice > 0) return cm.averageSellPrice;
-    if (cm.trendPrice > 0) return cm.trendPrice;
-    if (cm.avg30 > 0) return cm.avg30;
-    if (cm.avg7 > 0) return cm.avg7;
-    if (cm.avg1 > 0) return cm.avg1;
-  }
   const tp = card.tcgplayer?.prices;
   if (tp) {
     let minMarket = 0;
@@ -186,18 +180,39 @@ export function getCardPrice(card) {
     }
     if (minMarket > 0) return minMarket;
   }
+  const cm = card.cardmarket?.prices;
+  if (cm) {
+    if (cm.averageSellPrice > 0) return cm.averageSellPrice;
+    if (cm.trendPrice > 0) return cm.trendPrice;
+    if (cm.avg30 > 0) return cm.avg30;
+    if (cm.avg7 > 0) return cm.avg7;
+    if (cm.avg1 > 0) return cm.avg1;
+  }
   return 0;
 }
 
 // Short-term price trend from cardmarket rolling averages (30d → 7d → 1d → now).
+// Cardmarket is the only time-series source, but its data is unreliable for some
+// cards — if its "now" price is wildly higher than the real TCGplayer market, drop
+// the trend rather than show a misleading chart.
 export function getPriceTrend(card) {
   const cm = card?.cardmarket?.prices;
   if (!cm) return null;
+  const tp = card?.tcgplayer?.prices;
+  let tpMarket = 0;
+  if (tp) {
+    for (const k of Object.keys(tp)) {
+      const m = tp[k]?.market;
+      if (m > 0 && (tpMarket === 0 || m < tpMarket)) tpMarket = m;
+    }
+  }
+  const now = cm.averageSellPrice || cm.trendPrice || 0;
+  if (tpMarket > 0 && now > tpMarket * 5) return null;
   const pts = [
     { label: "30d", price: cm.avg30 },
     { label: "7d", price: cm.avg7 },
     { label: "1d", price: cm.avg1 },
-    { label: "Now", price: cm.averageSellPrice || cm.trendPrice },
+    { label: "Now", price: now },
   ].filter((p) => p.price && p.price > 0);
   return pts.length >= 2 ? pts : null;
 }
