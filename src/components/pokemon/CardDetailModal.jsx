@@ -7,7 +7,8 @@ import { Heart, Repeat2, Plus, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getCardPrice, getRarityStyle, CONDITIONS, VARIANTS } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
-import PriceChart from "@/components/pokemon/PriceChart";
+import PriceHistoryChart from "@/components/pokemon/PriceHistoryChart";
+import PriceBreakdown from "@/components/pokemon/PriceBreakdown";
 import { autoTickFromBinder } from "@/lib/setlist";
 
 export default function CardDetailModal({ card, open, onOpenChange }) {
@@ -83,7 +84,8 @@ export default function CardDetailModal({ card, open, onOpenChange }) {
             </div>
           </div>
         </div>
-        <PriceChart card={card} />
+        <PriceHistoryChart card={card} />
+        <PriceBreakdown card={card} />
         <DialogFooter className="gap-2 sm:justify-between">
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => addToList("wishlist")} disabled={busy} className="text-blue-300"><Heart className="w-4 h-4 mr-1.5" /> Wishlist</Button>

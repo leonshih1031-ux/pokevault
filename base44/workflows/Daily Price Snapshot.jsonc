@@ -1,0 +1,44 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "daily_price_snapshot",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "snapshot_prices": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "snapshotCardPrices"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Snapshot card prices",
+            "description": "Record daily TCGplayer prices for tracked cards"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Daily Price Snapshot",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 * * *",
+      "one_time_date": null,
+      "timezone": "Asia/Hong_Kong",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Records current TCGplayer prices for all tracked cards daily so price-history charts accumulate real data over time"
+}

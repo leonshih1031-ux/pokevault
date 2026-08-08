@@ -1,0 +1,44 @@
+{
+  "name": "CardPriceHistory",
+  "type": "object",
+  "properties": {
+    "card_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "image_small": {
+      "type": "string"
+    },
+    "set_id": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    },
+    "snapshot_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "card_id",
+    "snapshot_date"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,35 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-
-function getCardPrice(card) {
-  if (!card) return 0;
-  const tp = card.tcgplayer?.prices;
-  if (tp) {
-    let minMarket = 0, minLow = 0;
-    for (const k of Object.keys(tp)) {
-      const m = tp[k]?.market;
-      if (m > 0 && (minMarket === 0 || m < minMarket)) minMarket = m;
-      const l = tp[k]?.low;
-      if (l > 0 && (minLow === 0 || l < minLow)) minLow = l;
-    }
-    if (minMarket > 0) return minMarket;
-    if (minLow > 0) return minLow;
-  }
-  const cm = card.cardmarket?.prices;
-  if (cm) {
-    if (cm.averageSellPrice > 0) return cm.averageSellPrice;
-    if (cm.trendPrice > 0) return cm.trendPrice;
-  }
-  return 0;
-}
-
-async function fetchCard(id) {
-  try {
-    const res = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`, { headers: { Accept: "application/json" } });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.data || null;
-  } catch { return null; }
-}
+import { getCardPrice, fetchCard } from "../../shared/cardPrice.ts";
 
 export default async function(req) {
   try {
