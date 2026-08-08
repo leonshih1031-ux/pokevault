@@ -5,6 +5,11 @@ import { Newspaper, Loader2, RefreshCw, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Image } from "@/components/ui/image";
 
+const FALLBACK_IMAGES = [
+  "https://media.base44.com/images/public/6a74924d098c137cf967c644/fee4c98f0_generated_image.png",
+  "https://media.base44.com/images/public/6a74924d098c137cf967c644/a8e7f02d0_generated_image.png",
+];
+
 export default function News() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,40 +47,27 @@ export default function News() {
         <div className="text-sm text-slate-500 py-10 text-center rounded-xl border border-dashed border-white/5">No articles found right now. Try refreshing.</div>
       ) : (
         <div className="space-y-3">
-          {articles[0] && (
-            <a href={articles[0].url || "#"} target="_blank" rel="noreferrer" className="block rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden hover:border-emerald-400/30 transition group md:flex">
-              <div className="md:w-64 h-40 md:h-auto shrink-0 relative">
-                <Image src="https://media.base44.com/images/public/6a74924d098c137cf967c644/a8e7f02d0_generated_image.png" alt="" className="absolute inset-0 w-full h-full" fittingType="fill" />
-                <div className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-emerald-400/90 text-[10px] font-bold text-[#0e1014]">FEATURED</div>
-              </div>
-              <div className="p-5 flex flex-col justify-center">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="font-bold text-lg leading-snug group-hover:text-emerald-400 transition">{articles[0].title}</div>
-                  {articles[0].url && <ExternalLink className="w-4 h-4 text-slate-600 shrink-0" />}
+          {articles.map((a, i) => {
+            const img = a.image_url || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length];
+            return (
+              <a key={i} href={a.url || "#"} target="_blank" rel="noreferrer" className="flex rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden hover:border-emerald-400/30 hover:bg-emerald-400/[0.03] transition group">
+                <div className="w-28 sm:w-36 h-24 sm:h-28 shrink-0 relative bg-white/5">
+                  <Image src={img} alt="" className="absolute inset-0 w-full h-full" fittingType="fill" />
                 </div>
-                <div className="text-sm text-slate-400 leading-relaxed mb-3">{articles[0].summary}</div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                  {articles[0].source && <span className="px-1.5 py-0.5 rounded bg-white/5">{articles[0].source}</span>}
-                  {articles[0].date && <span>{new Date(articles[0].date).toLocaleDateString()}</span>}
-                </div>
-              </div>
-            </a>
-          )}
-          <div className="grid md:grid-cols-2 gap-3">
-            {articles.slice(1).map((a, i) => (
-              <a key={i} href={a.url || "#"} target="_blank" rel="noreferrer" className="block rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:border-emerald-400/30 hover:bg-emerald-400/[0.03] transition group">
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <div className="font-semibold text-sm leading-snug group-hover:text-emerald-400 transition">{a.title}</div>
-                  {a.url && <ExternalLink className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-0.5" />}
-                </div>
-                <div className="text-xs text-slate-400 leading-relaxed mb-2">{a.summary}</div>
-                <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                  {a.source && <span className="px-1.5 py-0.5 rounded bg-white/5">{a.source}</span>}
-                  {a.date && <span>{new Date(a.date).toLocaleDateString()}</span>}
+                <div className="flex-1 p-3 sm:p-4 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="font-semibold text-sm leading-snug group-hover:text-emerald-400 transition line-clamp-2">{a.title}</div>
+                    {a.url && <ExternalLink className="w-3.5 h-3.5 text-slate-600 shrink-0 mt-0.5" />}
+                  </div>
+                  <div className="text-xs text-slate-400 leading-relaxed line-clamp-2 mb-2">{a.summary}</div>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                    {a.source && <span className="px-1.5 py-0.5 rounded bg-white/5">{a.source}</span>}
+                    {a.date && <span>{new Date(a.date).toLocaleDateString()}</span>}
+                  </div>
                 </div>
               </a>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -6,7 +6,7 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const prompt = `Find the latest Pokémon Trading Card Game news and articles from the last 2 weeks. Focus on: new set releases and reveal dates, banlist or rule changes, notable card price movements, major tournament results, and official Pokémon Company announcements. Return the 8 most notable real articles as JSON, each with: title, summary (2 concise sentences), source (publication/site name), url, and date (ISO 8601 if available). Only include real, verifiable articles — do not fabricate items or URLs.`;
+    const prompt = `Find the latest Pokémon Trading Card Game news and articles from the last 2 weeks. Focus on: new set releases and reveal dates, banlist or rule changes, notable card price movements, major tournament results, and official Pokémon Company announcements. Return the 8 most notable real articles as JSON, each with: title, summary (2 concise sentences), source (publication/site name), url, date (ISO 8601 if available), and image_url (a direct URL to a relevant image for the article — e.g. promo card artwork, set artwork, or article thumbnail; use an empty string if none is available). Only include real, verifiable articles — do not fabricate items or URLs.`;
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
@@ -24,7 +24,8 @@ export default async function(req) {
                 summary: { type: "string" },
                 source: { type: "string" },
                 url: { type: "string" },
-                date: { type: "string" }
+                date: { type: "string" },
+                image_url: { type: "string" }
               },
               required: ["title", "summary"]
             }
