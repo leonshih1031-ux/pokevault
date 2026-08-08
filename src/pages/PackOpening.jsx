@@ -36,6 +36,7 @@ export default function PackOpening() {
     try {
       let cards = cacheRef.current[selectedSet.id];
       if (!cards) { cards = await getSetCards(selectedSet.id); cacheRef.current[selectedSet.id] = cards; }
+      if (!cards || !cards.length) { toast({ title: "Could not load cards for this set — try again", variant: "destructive" }); return; }
       const newPack = buildPack(cards);
       const value = newPack.reduce((s, c) => s + getCardPrice(c), 0);
       setChaseIds(getChaseCardIds(cards));

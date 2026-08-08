@@ -52,23 +52,29 @@ const SET_EXTRAS = { swsh12pt5: ["swsh12pt5gg"] };
 
 // The public API occasionally returns an HTML rate-limit page instead of JSON.
 // Validate the content-type and retry a few times before giving up.
-async function fetchJson(url) {
-  for (let attempt = 0; attempt < 4; attempt++) {
+// Fetch with a hard timeout so a hung/rate-limited request fails fast instead
+// of stalling the whole pack-opening flow.
+async function fetchJson(url, { timeoutMs = 12000, retries = 3 } = {}) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      const res = await fetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
+      clearTimeout(timer);
       const ct = res.headers.get("content-type") || "";
       if (!ct.includes("application/json")) {
-        if (attempt < 3) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+        if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * (attempt + 1))); continue; }
         return null;
       }
       if (!res.ok) {
         if (res.status === 400 || res.status === 404) return null;
-        if (attempt < 3) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+        if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * (attempt + 1))); continue; }
         return null;
       }
       return await res.json();
     } catch {
-      if (attempt < 3) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+      clearTimeout(timer);
+      if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * (attempt + 1))); continue; }
       return null;
     }
   }
@@ -138,6 +144,8 @@ export async function searchCards({ query, setId, rarity, type, supertype, page 
   return { cards: json.data || [], totalCount: json.totalCount || 0, page, pageSize };
 }
 
+// Fetch the full set as fast as possible: page 1 first (to learn totalCount),
+// then all remaining pages IN PARALLEL. Cached for 6h so re-opens are instant.
 export async function getSetCards(setId) {
   const key = `pk_cards_${setId}`;
   const cached = cacheGet(key, 6 * 3600 * 1000);
@@ -145,23 +153,25 @@ export async function getSetCards(setId) {
   const ids = [setId, ...(SET_EXTRAS[setId] || [])];
   let all = [];
   for (const id of ids) {
-    let page = 1;
-    let totalCount = Infinity;
-    while (all.length < totalCount && page <= 6) {
-      const params = new URLSearchParams();
-      params.set("q", `set.id:${id}`);
-      params.set("page", String(page));
-      params.set("pageSize", "250");
-      const json = await fetchJson(`${BASE}/cards?${params.toString()}`);
-      if (!json) break;
-      totalCount = Math.max(totalCount, json.totalCount || 0);
-      all = all.concat(json.data || []);
-      if (!json.data || json.data.length < 250) break;
-      page++;
+    const p1 = new URLSearchParams({ q: `set.id:${id}`, page: "1", pageSize: "250" });
+    const first = await fetchJson(`${BASE}/cards?${p1.toString()}`, { retries: 1, timeoutMs: 8000 });
+    if (!first || !first.data) continue;
+    all = all.concat(first.data);
+    const total = first.totalCount || first.data.length;
+    const pages = Math.min(6, Math.ceil(total / 250));
+    if (pages > 1) {
+      const rest = [];
+      for (let p = 2; p <= pages; p++) {
+        const pp = new URLSearchParams({ q: `set.id:${id}`, page: String(p), pageSize: "250" });
+        rest.push(fetchJson(`${BASE}/cards?${pp.toString()}`, { retries: 1, timeoutMs: 8000 }));
+      }
+      const results = await Promise.all(rest);
+      for (const r of results) if (r && r.data) all = all.concat(r.data);
     }
   }
-  if (all.length) cachePut(key, all);
-  return all;
+  if (all.length) { cachePut(key, all); return all; }
+  const stale = cacheAny(key);
+  return stale || all;
 }
 
 // Price: prefer TCGplayer's market price (reliable, native USD). Cardmarket data
@@ -173,12 +183,15 @@ export function getCardPrice(card) {
   if (!card) return 0;
   const tp = card.tcgplayer?.prices;
   if (tp) {
-    let minMarket = 0;
+    let minMarket = 0, minLow = 0;
     for (const k of Object.keys(tp)) {
       const m = tp[k]?.market;
       if (m > 0 && (minMarket === 0 || m < minMarket)) minMarket = m;
+      const l = tp[k]?.low;
+      if (l > 0 && (minLow === 0 || l < minLow)) minLow = l;
     }
     if (minMarket > 0) return minMarket;
+    if (minLow > 0) return minLow; // market often null for commons; low is the low end of listings
   }
   const cm = card.cardmarket?.prices;
   if (cm) {
