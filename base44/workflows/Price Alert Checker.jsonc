@@ -1,0 +1,44 @@
+{
+  "description": "Checks all active price alerts every 6 hours and emails users when a target is hit",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */6 * * *",
+      "one_time_date": null,
+      "timezone": "Asia/Hong_Kong",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "price_alert_checker",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "check_alerts": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "checkPriceAlerts"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Check price alerts",
+            "description": "Email users on triggers"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Price Alert Checker"
+}

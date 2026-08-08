@@ -15,6 +15,7 @@ import SearchPage from '@/pages/Search';
 import Wishlist from '@/pages/Wishlist';
 import Marketplace from '@/pages/Marketplace';
 import SetList from '@/pages/SetList';
+import Alerts from '@/pages/Alerts';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/setlist" element={<SetList />} />
+        <Route path="/alerts" element={<Alerts />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

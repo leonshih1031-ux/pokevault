@@ -1,0 +1,36 @@
+{
+  "name": "PortfolioSnapshot",
+  "type": "object",
+  "properties": {
+    "total_value": {
+      "type": "number"
+    },
+    "cost_basis": {
+      "type": "number"
+    },
+    "card_count": {
+      "type": "integer"
+    },
+    "snapshot_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "snapshot_date"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

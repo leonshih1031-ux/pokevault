@@ -1,0 +1,66 @@
+{
+  "name": "PriceAlert",
+  "type": "object",
+  "properties": {
+    "card_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "image_small": {
+      "type": "string"
+    },
+    "set_id": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "string"
+    },
+    "target_price": {
+      "type": "number"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "below",
+        "above"
+      ],
+      "default": "below"
+    },
+    "triggered": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_price": {
+      "type": "number"
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "card_id",
+    "name",
+    "target_price",
+    "direction"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

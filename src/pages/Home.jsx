@@ -3,12 +3,15 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Sparkles, BookOpen, Search as SearchIcon, TrendingUp, TrendingDown, Layers, ChevronRight, Package, Loader2 } from "lucide-react";
 import { getRarityStyle } from "@/lib/pokemonApi";
+import PortfolioChart from "@/components/portfolio/PortfolioChart";
+import MoversSection from "@/components/portfolio/MoversSection";
 
 const money = (n) => `$${(n || 0).toFixed(2)}`;
 
 export default function Home() {
   const [items, setItems] = useState([]);
   const [packs, setPacks] = useState([]);
+  const [snapshots, setSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,6 +22,17 @@ export default function Home() {
           base44.entities.PackHistory.list("-opened_date", 5),
         ]);
         setItems(list); setPacks(ph);
+        // Snapshot today's portfolio value once per day (client-side, RLS-owned).
+        const today = new Date().toISOString().slice(0, 10);
+        const existing = await base44.entities.PortfolioSnapshot.filter({ snapshot_date: today }, "-snapshot_date", 1);
+        if (existing.length === 0) {
+          const v = list.reduce((s, i) => s + (i.current_price || 0) * (i.quantity || 1), 0);
+          const c = list.reduce((s, i) => s + (i.purchase_price || 0) * (i.quantity || 1), 0);
+          const q = list.reduce((s, i) => s + (i.quantity || 1), 0);
+          await base44.entities.PortfolioSnapshot.create({ total_value: v, cost_basis: c, card_count: q, snapshot_date: today });
+        }
+        const snaps = await base44.entities.PortfolioSnapshot.list("snapshot_date", 60);
+        setSnapshots(snaps);
       } catch {}
       finally { setLoading(false); }
     })();
@@ -58,6 +72,9 @@ export default function Home() {
         <StatCard icon={<Package className="w-4 h-4" />} label="Cost Basis" value={money(cost)} />
         <StatCard icon={gain >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />} label="Gain / Loss" value={`${gain >= 0 ? "+" : ""}${money(gain)}`} accent={gain >= 0 ? "text-emerald-400" : "text-red-400"} />
       </div>
+
+      <PortfolioChart snapshots={snapshots} />
+      <MoversSection items={items} />
 
       <div className="grid lg:grid-cols-3 gap-5">
         <section className="lg:col-span-2 rounded-2xl border border-white/5 bg-white/[0.02] p-5">

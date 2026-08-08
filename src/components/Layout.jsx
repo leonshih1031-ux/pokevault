@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from "react-router-dom";
-import { Home, Sparkles, BookOpen, Search, Heart, Store, ListChecks } from "lucide-react";
+import { Home, Sparkles, BookOpen, Search, Heart, Store, ListChecks, Bell } from "lucide-react";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
@@ -9,6 +9,7 @@ const nav = [
   { to: "/wishlist", label: "Wishlist", icon: Heart, end: false },
   { to: "/marketplace", label: "Marketplace", icon: Store, end: false },
   { to: "/setlist", label: "Set List", icon: ListChecks, end: false },
+  { to: "/alerts", label: "Alerts", icon: Bell, end: false },
 ];
 
 export default function Layout() {
