@@ -16,7 +16,17 @@ export default function Layout() {
     <div className="min-h-screen flex bg-[#0e1014] text-slate-100">
       <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-white/5 bg-[#12151b] sticky top-0 h-screen">
         <div className="px-6 py-7 flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-blue-500 grid place-items-center font-bold text-[#0e1014]">P</div>
+          <svg viewBox="0 0 36 36" className="w-9 h-9 shrink-0" aria-hidden="true">
+            <defs><clipPath id="pkball-clip"><circle cx="18" cy="18" r="17" /></clipPath></defs>
+            <g clipPath="url(#pkball-clip)">
+              <rect x="0" y="0" width="36" height="36" fill="#f1f5f9" />
+              <rect x="0" y="18" width="36" height="18" fill="#ef4444" />
+              <rect x="0" y="14.5" width="36" height="7" fill="#0e1014" />
+            </g>
+            <circle cx="18" cy="18" r="17" fill="none" stroke="#0e1014" strokeWidth="1.5" />
+            <circle cx="18" cy="18" r="6" fill="#f1f5f9" stroke="#0e1014" strokeWidth="1.5" />
+            <text x="18" y="18.6" textAnchor="middle" dominantBaseline="central" fontFamily="ui-sans-serif, system-ui, sans-serif" fontWeight="800" fontSize="9" fill="#0e1014">P</text>
+          </svg>
           <div>
             <div className="font-bold tracking-tight leading-none">PokePortfolio</div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mt-1">Collector Hub</div>
