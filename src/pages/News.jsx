@@ -53,20 +53,19 @@ export default function News() {
   useEffect(() => {
     if (!articles.length) return;
     articles.forEach((a) => {
-      if (a.image_url) return;
-      const key = `pk_news_img_${encodeURIComponent(a.title)}`;
+      if (a.image_url || !a.url) return;
+      const key = `pk_news_img_${encodeURIComponent(a.url)}`;
       let cached = null;
       try { cached = JSON.parse(localStorage.getItem(key)); } catch {}
       if (cached && Date.now() - cached.t < 30 * 24 * 60 * 60 * 1000) {
-        setImageMap((m) => (m[a.title] ? m : { ...m, [a.title]: cached.url }));
+        if (cached.url) setImageMap((m) => (m[a.url] ? m : { ...m, [a.url]: cached.url }));
         return;
       }
-      base44.functions.invoke("generateNewsImage", { title: a.title, summary: a.summary })
+      base44.functions.invoke("getNewsArticleImage", { url: a.url })
         .then((res) => {
-          const url = res.data?.url;
-          if (!url) return;
-          localStorage.setItem(key, JSON.stringify({ url, t: Date.now() }));
-          setImageMap((m) => ({ ...m, [a.title]: url }));
+          const img = res.data?.image_url;
+          localStorage.setItem(key, JSON.stringify({ url: img || '', t: Date.now() }));
+          if (img) setImageMap((m) => ({ ...m, [a.url]: img }));
         })
         .catch(() => {});
     });
@@ -95,7 +94,7 @@ export default function News() {
       ) : (
         <div className="space-y-3">
           {articles.map((a, i) => {
-            const img = a.image_url || imageMap[a.title] || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length];
+            const img = a.image_url || imageMap[a.url] || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length];
             return (
               <a key={i} href={a.url || "#"} target="_blank" rel="noreferrer" className="flex rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden hover:border-emerald-400/30 hover:bg-emerald-400/[0.03] transition group">
                 <div className="w-28 sm:w-36 h-24 sm:h-28 shrink-0 relative bg-white/5">
