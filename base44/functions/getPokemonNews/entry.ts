@@ -74,7 +74,7 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const prompt = `Find the latest Pokémon Trading Card Game news from the last 2 weeks. Search for real, recent articles about: new set releases and reveal dates, banlist or rule changes, notable card price movements, major tournament results, and official Pokémon Company announcements. Return the 12 most notable REAL article URLs you actually found via search. Each URL MUST be the URL of a specific article page (NOT a homepage, category index, tag page, or search results page), and every URL MUST be distinct. For each, include a 2-3 word topic label. Do NOT fabricate or guess URLs — only return URLs you verified exist.`;
+    const prompt = `Find the latest Pokémon Trading Card Game news from the last 2 weeks. Search for real, recent articles about: new set releases and reveal dates, banlist or rule changes, notable card price movements, major tournament results, and official Pokémon Company announcements. Return the 14 most notable REAL article URLs you actually found via search. Each URL MUST be the URL of a specific article page (NOT a homepage, category index, tag page, or search results page), and every URL MUST be distinct. For each, include a 2-3 word topic label. Do NOT fabricate or guess URLs — only return URLs you verified exist.`;
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
@@ -103,11 +103,11 @@ export default async function(req) {
     const urls = (result.items || [])
       .map(it => (it.url || '').toString().trim().split('?')[0].replace(/\/$/, ''))
       .filter(u => /^https?:\/\//i.test(u) && !seen.has(u) && seen.add(u))
-      .slice(0, 12);
+      .slice(0, 14);
 
     const pages = await Promise.all(urls.map(u => fetchPage(u).then(html => html ? parseArticle(u, html) : null)));
     const isJunk = (t) => !t || /page not found|^not found$|^404|access denied|forbidden|^error$/i.test(t);
-    const articles = pages.filter(p => p && p.title && p.summary && !isJunk(p.title)).slice(0, 8);
+    const articles = pages.filter(p => p && p.title && p.summary && p.image_url && !isJunk(p.title)).slice(0, 8);
 
     return Response.json({ articles });
   } catch (error) {
