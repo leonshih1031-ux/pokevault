@@ -10,21 +10,44 @@ const FALLBACK_IMAGES = [
   "https://media.base44.com/images/public/6a74924d098c137cf967c644/a8e7f02d0_generated_image.png",
 ];
 
+const CACHE_KEY = "pk_news_cache";
+const CACHE_TTL = 30 * 60 * 1000;
+
 export default function News() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (force = false) => {
+    let cache = null;
+    try { cache = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch {}
+    const fresh = cache && Date.now() - cache.timestamp < CACHE_TTL;
+    if (cache) {
+      setArticles(cache.articles || []);
+      setLoading(false);
+    }
+    if (fresh && !force) return;
+    if (!cache) setLoading(true);
+    setRefreshing(true);
     try {
       const res = await base44.functions.invoke("getPokemonNews", {});
-      setArticles(res.data?.articles || []);
-    } catch { toast({ title: "Could not load news", variant: "destructive" }); }
-    finally { setLoading(false); }
+      const arts = res.data?.articles || [];
+      if (arts.length) {
+        setArticles(arts);
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ articles: arts, timestamp: Date.now() }));
+      } else if (!cache) {
+        toast({ title: "No news found", variant: "destructive" });
+      }
+    } catch {
+      if (!cache) toast({ title: "Could not load news", variant: "destructive" });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(false); }, []);
 
   return (
     <div className="space-y-6 pk-fade-up">
@@ -36,11 +59,12 @@ export default function News() {
           <h1 className="font-bold text-2xl md:text-4xl tracking-tight">Pokémon TCG news</h1>
           <p className="text-sm text-slate-300 mt-1 max-w-xl">Latest set releases, reveals, price moves, and tournament news — pulled live from the web.</p>
         </div>
-        <Button variant="outline" onClick={load} disabled={loading} className="absolute top-4 right-4 bg-black/40 border-white/20 backdrop-blur hover:bg-black/60">{loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />} Refresh</Button>
+        <Button variant="outline" onClick={() => load(true)} disabled={refreshing} className="absolute top-4 right-4 bg-black/40 border-white/20 backdrop-blur hover:bg-black/60">{refreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />} Refresh</Button>
       </section>
 
       {loading ? (
         <div className="space-y-3">
+          <div className="text-xs text-slate-500 flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Fetching the latest news from the web — this can take up to a minute…</div>
           {[...Array(5)].map((_, i) => <div key={i} className="h-28 rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />)}
         </div>
       ) : articles.length === 0 ? (
