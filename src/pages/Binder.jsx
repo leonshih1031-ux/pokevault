@@ -2,9 +2,10 @@ import { useEffect, useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, Plus, Loader2, TrendingUp, TrendingDown, Layers, RefreshCw } from "lucide-react";
+import { Search as SearchIcon, Plus, Loader2, TrendingUp, TrendingDown, Layers, RefreshCw, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import EditCollectionModal from "@/components/pokemon/EditCollectionModal";
+import ShareBinderModal from "@/components/binder/ShareBinderModal";
 import { getSets, getRarityStyle, CONDITIONS, fetchCardPrices } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -19,6 +20,7 @@ export default function Binder() {
   const [condFilter, setCondFilter] = useState("all");
   const [editing, setEditing] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,6 +85,7 @@ export default function Binder() {
           <h1 className="font-bold text-2xl md:text-3xl">Your Binder</h1>
         </div>
         <div className="flex gap-2">
+          <Button variant="secondary" className="bg-white/5" onClick={() => setShareOpen(true)}><Share2 className="w-4 h-4 mr-1.5" /> Share</Button>
           <Button variant="secondary" className="bg-white/5" onClick={refreshPrices} disabled={refreshing || items.length === 0}>
             <RefreshCw className={`w-4 h-4 mr-1.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh Prices
           </Button>
@@ -166,6 +169,7 @@ export default function Binder() {
       )}
 
       {editing && <EditCollectionModal entry={editing} open={!!editing} onOpenChange={(o) => !o && onSaved()} />}
+      <ShareBinderModal open={shareOpen} onOpenChange={setShareOpen} />
     </div>
   );
 }

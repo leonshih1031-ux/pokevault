@@ -7,6 +7,7 @@ import { Trash2, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getRarityStyle, CONDITIONS, VARIANTS, GRADE_COMPANIES } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
+import PriceHistoryChart from "@/components/pokemon/PriceHistoryChart";
 
 export default function EditCollectionModal({ entry, open, onOpenChange }) {
   const [form, setForm] = useState(entry);
@@ -76,6 +77,7 @@ export default function EditCollectionModal({ entry, open, onOpenChange }) {
             <Field label="Folder"><Input value={form.folder || "Main"} onChange={(e) => set("folder", e.target.value)} className="bg-white/5 border-white/10" /></Field>
           </div>
         </div>
+        <PriceHistoryChart card={{ id: entry.card_id }} />
         <DialogFooter className="sm:justify-between">
           <Button variant="ghost" onClick={remove} disabled={saving} className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4 mr-1.5" /> Remove</Button>
           <Button onClick={save} disabled={saving} className="bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}</Button>

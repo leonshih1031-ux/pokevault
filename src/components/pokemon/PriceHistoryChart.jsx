@@ -19,7 +19,15 @@ export default function PriceHistoryChart({ card }) {
           setSource("Recorded TCGplayer prices · daily snapshots");
           return;
         }
-        const trend = getPriceTrend(card);
+        let trend = getPriceTrend(card);
+        if ((!trend || trend.length < 2) && card.id) {
+          const r = await fetch(`https://api.pokemontcg.io/v2/cards/${card.id}`, { headers: { Accept: "application/json" } });
+          if (cancelled) return;
+          if (r.ok) {
+            const full = (await r.json()).data;
+            trend = full ? getPriceTrend(full) : trend;
+          }
+        }
         if (trend && trend.length >= 2) {
           setData(trend);
           setSource("Recent trend · cardmarket 30d → now");

@@ -7,6 +7,19 @@
         "admin",
         "user"
       ]
+    },
+    "public_profile": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this user's binder is viewable via the public share link"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Name shown on the public binder profile"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short bio shown on the public binder profile"
     }
   },
   "required": [
