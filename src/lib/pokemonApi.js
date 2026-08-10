@@ -88,7 +88,7 @@ export async function getSets() {
   if (!json) {
     const stale = cacheAny("pk_sets");
     if (stale) return stale;
-    throw new Error("Failed to load sets");
+    return []; // never throw — callers degrade gracefully with an empty list
   }
   const filtered = json.data.filter((s) => {
     if (HIDDEN_SET_IDS.has(s.id)) return false;
@@ -97,6 +97,7 @@ export async function getSets() {
   });
   cachePut("pk_sets", filtered);
   return filtered;
+  // Never throw — callers can degrade gracefully with an empty set list.
 }
 
 export async function getCard(id) {

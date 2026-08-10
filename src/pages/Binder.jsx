@@ -10,6 +10,7 @@ import { getSets, getRarityStyle, CONDITIONS, fetchCardPrices } from "@/lib/poke
 import { useToast } from "@/components/ui/use-toast";
 
 const money = (n) => `$${(n || 0).toFixed(2)}`;
+const priceStr = (n) => (n > 0 ? money(n) : "—");
 
 export default function Binder() {
   const [items, setItems] = useState([]);
@@ -25,11 +26,13 @@ export default function Binder() {
 
   useEffect(() => {
     (async () => {
+      // Fetch collection and sets independently so a transient API hiccup
+      // on one doesn't nuke the other.
       try {
-        const [list, s] = await Promise.all([base44.entities.CollectionCard.list("-updated_date", 500), getSets()]);
-        setItems(list); setSets(s);
+        setItems(await base44.entities.CollectionCard.list("-updated_date", 500));
       } catch { toast({ title: "Could not load collection", variant: "destructive" }); }
-      finally { setLoading(false); }
+      setSets(await getSets());
+      setLoading(false);
     })();
   }, []);
 
@@ -155,7 +158,7 @@ export default function Binder() {
                           <div className="text-[11px] font-medium leading-tight line-clamp-1">{c.name}</div>
                           <div className="flex items-center justify-between mt-1">
                             <span className="text-[10px]" style={{ color: style.color }}>{c.rarity}</span>
-                            <span className="text-[10px] font-semibold text-emerald-400">{money(val)}</span>
+                            <span className="text-[10px] font-semibold text-emerald-400">{priceStr(val)}</span>
                           </div>
                         </div>
                       </button>

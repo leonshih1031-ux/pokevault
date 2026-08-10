@@ -26,7 +26,7 @@ export default function SetList() {
   };
 
   useEffect(() => {
-    getSets().then((s) => setSets(s.slice(0, 24))).catch(() => toast({ title: "Could not load sets", variant: "destructive" })).finally(() => setLoading(false));
+    getSets().then((s) => setSets(s.slice(0, 24))).finally(() => setLoading(false));
     loadCounts();
     getAutoTickSetting().then(setAutoTick);
   }, []);

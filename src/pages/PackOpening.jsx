@@ -21,7 +21,6 @@ export default function PackOpening() {
   useEffect(() => {
     getSets()
       .then((s) => { setSets(s.slice(0, 24)); setSelectedSet(s[0]); })
-      .catch(() => toast({ title: "Could not load sets", variant: "destructive" }))
       .finally(() => setLoadingSets(false));
     loadHistory();
   }, []);
