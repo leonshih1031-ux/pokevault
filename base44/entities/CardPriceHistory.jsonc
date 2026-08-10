@@ -17,6 +17,10 @@
     "set_name": {
       "type": "string"
     },
+    "rarity": {
+      "type": "string",
+      "description": "TCG API rarity string at snapshot time (e.g. Double Rare, Ultra Rare, Illustration Rare)."
+    },
     "price": {
       "type": "number"
     },

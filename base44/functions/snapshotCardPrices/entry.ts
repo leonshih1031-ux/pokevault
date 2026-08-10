@@ -45,6 +45,7 @@ export default async function(req) {
               image_small: m?.image_small || card?.images?.small || prev.image_small || "",
               set_id: m?.set_id || card?.set?.id || prev.set_id || "",
               set_name: m?.set_name || card?.set?.name || prev.set_name || "",
+              rarity: card?.rarity || prev.rarity || "",
             });
             updated++;
           } else {
@@ -52,7 +53,7 @@ export default async function(req) {
               card_id: id, name: m?.name || card?.name || "",
               image_small: m?.image_small || card?.images?.small || "",
               set_id: m?.set_id || card?.set?.id || "", set_name: m?.set_name || card?.set?.name || "",
-              price, pct_30d: pct, snapshot_date: today
+              rarity: card?.rarity || "", price, pct_30d: pct, snapshot_date: today
             });
             recorded++;
           }
@@ -65,7 +66,7 @@ export default async function(req) {
     // and within the function timeout; failures retry on the next run.
     const queue = ids.filter((id) => {
       const prev = existingByCard.get(id);
-      return !prev || !prev.price || prev.pct_30d == null;
+      return !prev || !prev.price || prev.pct_30d == null || !prev.rarity;
     });
     await Promise.all(Array.from({ length: 2 }, worker));
 

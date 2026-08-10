@@ -29,20 +29,17 @@ export default function MoversSection({ items }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const byCard = new Map((items || []).map((i) => [i.card_id, i]));
       try {
         const hist = await base44.entities.CardPriceHistory.list("-snapshot_date", 500);
         if (cancelled) return;
         const latestByCard = new Map();
         const allByCard = {};
         for (const h of hist) {
-          if (!byCard.has(h.card_id)) continue;
           if (!latestByCard.has(h.card_id)) latestByCard.set(h.card_id, h);
           (allByCard[h.card_id] ||= []).push(h);
         }
         const out = [];
         for (const [cid, latest] of latestByCard) {
-          const item = byCard.get(cid);
           let pct = latest.pct_30d;
           let prev = null;
           const snaps = (allByCard[cid] || []).filter((s) => s.price > 0);
@@ -58,8 +55,15 @@ export default function MoversSection({ items }) {
           }
           if (pct == null || latest.price <= 0) continue;
           // Premium-rarity filter: Double Rares need >10%, others always qualify.
-          if (!isMoverEligible(item.rarity, pct)) continue;
-          out.push({ ...item, pct, prev: prev ?? latest.price, last: latest.price });
+          if (!isMoverEligible(latest.rarity, pct)) continue;
+          out.push({
+            id: cid,
+            card_id: cid,
+            name: latest.name,
+            image_small: latest.image_small,
+            rarity: latest.rarity,
+            pct, prev: prev ?? latest.price, last: latest.price,
+          });
         }
         setMovers(out);
       } catch {
@@ -67,7 +71,7 @@ export default function MoversSection({ items }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [items]);
+  }, []);
 
   const ready = movers !== null;
   const gainers = ready ? movers.filter((m) => m.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 6) : [];
