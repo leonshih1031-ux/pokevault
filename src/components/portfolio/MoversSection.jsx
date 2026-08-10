@@ -49,10 +49,14 @@ export default function MoversSection({ items }) {
           }
           if (pct == null || latest.price <= 0) return null;
           if (!isMoverEligible(latest.rarity, pct)) return null;
+          // When we only have today's snapshot, derive the prior price from the
+          // 30-day percentage so the price arrow reflects the actual move
+          // instead of showing an unchanged $X → $X.
+          if (prev == null) prev = latest.price / (1 + pct / 100);
           return {
             id: cid, card_id: cid,
             name: latest.name, image_small: latest.image_small,
-            rarity: latest.rarity, pct, prev: prev ?? latest.price, last: latest.price,
+            rarity: latest.rarity, pct, prev, last: latest.price,
           };
         };
         const collectionMovers = [];
@@ -61,7 +65,7 @@ export default function MoversSection({ items }) {
           const m = buildMover(latest, cid);
           if (!m) continue;
           if (collectionIds.has(cid)) collectionMovers.push(m);
-          marketMovers.push(m);
+          else marketMovers.push(m);
         }
         setMovers({ collection: collectionMovers, market: marketMovers });
       } catch {
@@ -103,14 +107,14 @@ export default function MoversSection({ items }) {
     );
   };
 
-  const List = ({ items, dir, label, icon, accent }) => (
+  const List = ({ items, dir, label, icon, accent, emptyMsg }) => (
     <div>
       <div className={`flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-widest ${accent}`}>
         {icon}{label}
       </div>
       {items.length === 0 ? (
         <div className="text-xs text-slate-500 py-4 text-center rounded-xl border border-dashed border-white/5">
-          No eligible cards yet
+          {emptyMsg || "No eligible cards yet"}
         </div>
       ) : (
         <div className="space-y-2">{items.map((m) => <MoverRow key={m.id} m={m} dir={dir} />)}</div>
@@ -125,8 +129,8 @@ export default function MoversSection({ items }) {
         <div className="text-[10px] text-slate-500 mt-0.5">{subtitle}</div>
       </div>
       <div className="space-y-4">
-        <List items={gainers} dir="up" label="Top Gainers" icon={<TrendingUp className="w-3 h-3" />} accent="text-emerald-400" />
-        <List items={losers} dir="down" label="Top Losers" icon={<TrendingDown className="w-3 h-3" />} accent="text-red-400" />
+        <List items={gainers} dir="up" label="Top Gainers" icon={<TrendingUp className="w-3 h-3" />} accent="text-emerald-400" emptyMsg={title === "Entire Market" ? "No other collectors' cards moving yet" : "No eligible cards yet"} />
+        <List items={losers} dir="down" label="Top Losers" icon={<TrendingDown className="w-3 h-3" />} accent="text-red-400" emptyMsg={title === "Entire Market" ? "No other collectors' cards moving yet" : "No eligible cards yet"} />
       </div>
     </div>
   );
@@ -146,7 +150,7 @@ export default function MoversSection({ items }) {
           />
           <Section
             title="Entire Market"
-            subtitle="Biggest swings across all tracked cards"
+            subtitle="Biggest swings among cards tracked by other collectors"
             gainers={mktGainers}
             losers={mktLosers}
           />
