@@ -5,6 +5,32 @@ import { getRarityStyle } from "@/lib/pokemonApi";
 
 const money = (n) => `$${(n || 0).toFixed(2)}`;
 
+// "Above ex" = the ultra+ tier: V / VMAX / VSTAR / GX / Ultra Rare /
+// Illustration / Special Illustration Rare / Secret Rare / ACE / Rainbow.
+// Plain ex (Double Rare / "ex") is only included when it rose by a lot.
+const EX_ROSE_THRESHOLD = 10; // percent
+
+function isAboveEx(rarity) {
+  const r = (rarity || "").toLowerCase().trim();
+  if (!r) return false;
+  if (r.includes("secret") || r.includes("rainbow")) return true;
+  if (r.includes("special")) return true;
+  if (r.includes("ultra")) return true;
+  if (r.includes("illustration")) return true;
+  if (r.includes("vmax") || r.includes("vstar")) return true;
+  if (r.includes(" gx") || r.endsWith("gx") || r === "gx") return true;
+  if (r === "ace" || r.includes("ace spec")) return true;
+  if (r === "v" || r.endsWith(" v") || r.includes(" v ")) return true;
+  return false;
+}
+
+function isEx(rarity) {
+  const r = (rarity || "").toLowerCase().trim();
+  if (r.includes("double rare")) return true;
+  if (r.includes(" ex") || r.endsWith("ex") || r === "ex") return true;
+  return false;
+}
+
 export default function MoversSection({ items }) {
   const [movers, setMovers] = useState(null);
 
@@ -15,16 +41,33 @@ export default function MoversSection({ items }) {
       try {
         const hist = await base44.entities.CardPriceHistory.list("-snapshot_date", 500);
         if (cancelled) return;
-        // Latest snapshot per card, keep only those with a real 30d movement.
         const latestByCard = new Map();
+        const allByCard = {};
         for (const h of hist) {
           if (!byCard.has(h.card_id)) continue;
           if (!latestByCard.has(h.card_id)) latestByCard.set(h.card_id, h);
+          (allByCard[h.card_id] ||= []).push(h);
         }
         const out = [];
-        for (const [cid, h] of latestByCard) {
-          if (h.pct_30d == null) continue;
-          out.push({ ...byCard.get(cid), pct: h.pct_30d, last: h.price });
+        for (const [cid, latest] of latestByCard) {
+          const item = byCard.get(cid);
+          let pct = latest.pct_30d;
+          let prev = null;
+          const snaps = (allByCard[cid] || []).filter((s) => s.price > 0);
+          if (snaps.length >= 2) prev = snaps[snaps.length - 1].price;
+          // Fallback: own snapshot history when cardmarket 30d trend is missing.
+          if (pct == null && snaps.length >= 2) {
+            const earliest = snaps[snaps.length - 1];
+            const latestNz = snaps[0];
+            if (earliest.snapshot_date !== latestNz.snapshot_date) {
+              pct = (latestNz.price / earliest.price - 1) * 100;
+              prev = earliest.price;
+            }
+          }
+          if (pct == null || latest.price <= 0) continue;
+          // Above-ex always; plain ex only if it rose by a lot.
+          if (!isAboveEx(item.rarity) && !(isEx(item.rarity) && pct >= EX_ROSE_THRESHOLD)) continue;
+          out.push({ ...item, pct, prev: prev ?? latest.price, last: latest.price });
         }
         setMovers(out);
       } catch {
@@ -35,8 +78,8 @@ export default function MoversSection({ items }) {
   }, [items]);
 
   const ready = movers !== null;
-  const gainers = ready ? [...movers].sort((a, b) => b.pct - a.pct).slice(0, 5) : [];
-  const losers = ready ? [...movers].sort((a, b) => a.pct - b.pct).slice(0, 5) : [];
+  const gainers = ready ? movers.filter((m) => m.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 5) : [];
+  const losers = ready ? movers.filter((m) => m.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 5) : [];
 
   const Row = ({ m }) => {
     const up = m.pct >= 0;
@@ -49,7 +92,7 @@ export default function MoversSection({ items }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium truncate">{m.name}</div>
-          <div className="text-[10px] text-slate-500">{money(m.last)} · 30d</div>
+          <div className="text-[10px] text-slate-500">{money(m.prev)} → {money(m.last)}</div>
         </div>
         <div className={`text-xs font-semibold shrink-0 ${up ? "text-emerald-400" : "text-red-400"}`}>
           {up ? "+" : ""}{m.pct.toFixed(1)}%
@@ -64,14 +107,14 @@ export default function MoversSection({ items }) {
         <span className={accent}>{icon}</span>{title}
       </div>
       {list.length === 0
-        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No price movement data yet — movers appear after the daily price snapshot runs.</div>
+        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No EX+ cards with price movement yet — movers appear as market data accumulates.</div>
         : <div className="space-y-2">{list.map((m) => <Row key={m.id} m={m} />)}</div>}
     </div>
   );
 
   return (
     <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <div className="font-semibold mb-4">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">30-day market change</span></div>
+      <div className="font-semibold mb-4">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">EX+ · 30-day market change</span></div>
       {!ready ? (
         <div className="grid place-items-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-500" /></div>
       ) : (
