@@ -15,22 +15,16 @@ export default function MoversSection({ items }) {
       try {
         const hist = await base44.entities.CardPriceHistory.list("-snapshot_date", 500);
         if (cancelled) return;
-        const groups = {};
+        // Latest snapshot per card, keep only those with a real 30d movement.
+        const latestByCard = new Map();
         for (const h of hist) {
           if (!byCard.has(h.card_id)) continue;
-          (groups[h.card_id] ||= []).push(h);
+          if (!latestByCard.has(h.card_id)) latestByCard.set(h.card_id, h);
         }
         const out = [];
-        for (const [cid, arr] of Object.entries(groups)) {
-          if (arr.length < 2) continue;
-          const latest = arr[0];
-          const oldest = arr[arr.length - 1];
-          if (oldest.snapshot_date === latest.snapshot_date) continue;
-          const prev = Number(oldest.price || 0);
-          const now = Number(latest.price || 0);
-          if (prev <= 0 || now <= 0) continue;
-          const pct = (now / prev - 1) * 100;
-          out.push({ ...byCard.get(cid), pct, prev, last: now });
+        for (const [cid, h] of latestByCard) {
+          if (h.pct_30d == null) continue;
+          out.push({ ...byCard.get(cid), pct: h.pct_30d, last: h.price });
         }
         setMovers(out);
       } catch {
@@ -55,7 +49,7 @@ export default function MoversSection({ items }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium truncate">{m.name}</div>
-          <div className="text-[10px] text-slate-500">{money(m.prev)} → {money(m.last)}</div>
+          <div className="text-[10px] text-slate-500">{money(m.last)} · 30d</div>
         </div>
         <div className={`text-xs font-semibold shrink-0 ${up ? "text-emerald-400" : "text-red-400"}`}>
           {up ? "+" : ""}{m.pct.toFixed(1)}%
@@ -70,14 +64,14 @@ export default function MoversSection({ items }) {
         <span className={accent}>{icon}</span>{title}
       </div>
       {list.length === 0
-        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No price movement yet — movers appear as daily snapshots accumulate.</div>
+        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No price movement data yet — movers appear after the daily price snapshot runs.</div>
         : <div className="space-y-2">{list.map((m) => <Row key={m.id} m={m} />)}</div>}
     </div>
   );
 
   return (
     <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <div className="font-semibold mb-4">Biggest Movers</div>
+      <div className="font-semibold mb-4">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">30-day market change</span></div>
       {!ready ? (
         <div className="grid place-items-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-500" /></div>
       ) : (

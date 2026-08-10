@@ -23,6 +23,18 @@ export function getCardPrice(card) {
   return 0;
 }
 
+// Trailing-30-day percent change from cardmarket rolling averages.
+// `now` = averageSellPrice (or trendPrice fallback); baseline = avg30.
+// Returns null when cardmarket data is missing or unusable.
+export function getCardMarketTrendPct(card) {
+  const cm = card?.cardmarket?.prices;
+  if (!cm) return null;
+  const now = cm.averageSellPrice || cm.trendPrice || 0;
+  const base = cm.avg30 || 0;
+  if (now <= 0 || base <= 0) return null;
+  return (now / base - 1) * 100;
+}
+
 export async function fetchCard(id) {
   try {
     const res = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`, { headers: { Accept: "application/json" } });

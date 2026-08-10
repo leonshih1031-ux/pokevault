@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { getCardPrice, fetchCard } from "../../shared/cardPrice.ts";
+import { getCardPrice, getCardMarketTrendPct, fetchCard } from "../../shared/cardPrice.ts";
 
 export default async function(req) {
   try {
@@ -22,32 +22,50 @@ export default async function(req) {
 
     const ids = Object.keys(meta).slice(0, 150);
 
-    // Skip cards already snapshotted today.
+    // Index today's existing snapshots so we can update them in place
+    // (e.g. backfill pct_30d) instead of creating duplicates.
     const existing = await base44.asServiceRole.entities.CardPriceHistory.filter({ snapshot_date: today }, "-snapshot_date", 200);
-    const done = new Set((existing || []).map((h) => h.card_id));
-    const queue = ids.filter((id) => !done.has(id));
+    const existingByCard = new Map((existing || []).map((h) => [h.card_id, h]));
 
-    let recorded = 0, failed = 0;
+    let recorded = 0, updated = 0, failed = 0;
     async function worker() {
       while (queue.length) {
         const id = queue.shift();
         const card = await fetchCard(id);
         const price = getCardPrice(card);
+        const pct = getCardMarketTrendPct(card);
         const m = meta[id];
         try {
-          await base44.asServiceRole.entities.CardPriceHistory.create({
-            card_id: id, name: m?.name || card?.name || "",
-            image_small: m?.image_small || card?.images?.small || "",
-            set_id: m?.set_id || card?.set?.id || "", set_name: m?.set_name || card?.set?.name || "",
-            price, snapshot_date: today
-          });
-          recorded++;
+          const prev = existingByCard.get(id);
+          if (prev) {
+            await base44.asServiceRole.entities.CardPriceHistory.update(prev.id, {
+              price, pct_30d: pct,
+              name: m?.name || card?.name || prev.name || "",
+              image_small: m?.image_small || card?.images?.small || prev.image_small || "",
+              set_id: m?.set_id || card?.set?.id || prev.set_id || "",
+              set_name: m?.set_name || card?.set?.name || prev.set_name || "",
+            });
+            updated++;
+          } else {
+            await base44.asServiceRole.entities.CardPriceHistory.create({
+              card_id: id, name: m?.name || card?.name || "",
+              image_small: m?.image_small || card?.images?.small || "",
+              set_id: m?.set_id || card?.set?.id || "", set_name: m?.set_name || card?.set?.name || "",
+              price, pct_30d: pct, snapshot_date: today
+            });
+            recorded++;
+          }
         } catch { failed++; }
       }
     }
+    // Only process cards that either have no snapshot today or lack pct_30d.
+    const queue = ids.filter((id) => {
+      const prev = existingByCard.get(id);
+      return !prev || prev.pct_30d == null;
+    });
     await Promise.all(Array.from({ length: 4 }, worker));
 
-    return Response.json({ recorded, failed, tracked: ids.length });
+    return Response.json({ recorded, updated, failed, tracked: ids.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

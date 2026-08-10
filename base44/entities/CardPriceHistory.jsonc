@@ -20,6 +20,10 @@
     "price": {
       "type": "number"
     },
+    "pct_30d": {
+      "type": "number",
+      "description": "Percent change of cardmarket price over the trailing 30 days, computed from cardmarket rolling averages at snapshot time."
+    },
     "snapshot_date": {
       "type": "string",
       "format": "date"
