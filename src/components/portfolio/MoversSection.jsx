@@ -5,14 +5,21 @@ import { getRarityStyle } from "@/lib/pokemonApi";
 
 const money = (n) => `$${(n || 0).toFixed(2)}`;
 
-// "Above RR" = anything rarer than a plain Rare: Double Rare (ex),
-// Rare Holo, V / VMAX / VSTAR, Ultra Rare, Illustration / Special Illustration,
-// Secret Rare, ACE, Rainbow, etc. Commons, uncommons and plain Rares are excluded.
-function isAboveRR(rarity) {
+// Premium-rarity mover filter.
+// Double Rare (Scarlet/Violet ex) cards only qualify with a significant (>10%) move.
+// All other above-Rare rarities always qualify: Illustration Rare, Special
+// Illustration Rare, Ultra Rare, Hyper Rare, ACE SPEC, Rare Holo V/VMAX/VSTAR,
+// Rare Holo EX/GX, Rare Secret, Amazing Rare, Radiant Rare, Shiny Rare, Promo,
+// vintage holos, BW-era ex, XY-era full-art ex, S&S full art / Trainer Gallery.
+// Commons, uncommons and plain Rares are excluded.
+function isMoverEligible(rarity, pct) {
   const r = (rarity || "").toLowerCase().trim();
   if (!r) return false;
   if (r === "common" || r === "uncommon") return false;
   if (r === "rare") return false; // plain Rare is the cutoff, not included
+  if (r === "double rare") {
+    return pct != null && pct > 10;
+  }
   return true;
 }
 
@@ -50,8 +57,8 @@ export default function MoversSection({ items }) {
             }
           }
           if (pct == null || latest.price <= 0) continue;
-          // Above RR (rarer than a plain Rare) — ex, Ultra Rare, V/VSTAR, etc.
-          if (!isAboveRR(item.rarity)) continue;
+          // Premium-rarity filter: Double Rares need >10%, others always qualify.
+          if (!isMoverEligible(item.rarity, pct)) continue;
           out.push({ ...item, pct, prev: prev ?? latest.price, last: latest.price });
         }
         setMovers(out);
@@ -92,14 +99,14 @@ export default function MoversSection({ items }) {
         <span className={accent}>{icon}</span>{title}
       </div>
       {list.length === 0
-        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No RR+ cards with price movement yet — movers appear as market data accumulates.</div>
+        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No premium-rarity cards with price movement yet — movers appear as market data accumulates.</div>
         : <div className="space-y-2">{list.map((m) => <Row key={m.id} m={m} />)}</div>}
     </div>
   );
 
   return (
     <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <div className="font-semibold mb-4">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">RR+ · 30-day market change</span></div>
+      <div className="font-semibold mb-4">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">Premium rarities · 30-day market change</span></div>
       {!ready ? (
         <div className="grid place-items-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-500" /></div>
       ) : (
