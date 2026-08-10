@@ -7,19 +7,12 @@ const money = (n) => `$${(n || 0).toFixed(2)}`;
 
 // Premium-rarity mover filter.
 // Double Rare (Scarlet/Violet ex) cards only qualify with a significant (>10%) move.
-// All other above-Rare rarities always qualify: Illustration Rare, Special
-// Illustration Rare, Ultra Rare, Hyper Rare, ACE SPEC, Rare Holo V/VMAX/VSTAR,
-// Rare Holo EX/GX, Rare Secret, Amazing Rare, Radiant Rare, Shiny Rare, Promo,
-// vintage holos, BW-era ex, XY-era full-art ex, S&S full art / Trainer Gallery.
-// Commons, uncommons and plain Rares are excluded.
+// All other above-Rare rarities always qualify.
 function isMoverEligible(rarity, pct) {
   const r = (rarity || "").toLowerCase().trim();
   if (!r) return false;
-  if (r === "common" || r === "uncommon") return false;
-  if (r === "rare") return false; // plain Rare is the cutoff, not included
-  if (r === "double rare") {
-    return pct != null && pct > 10;
-  }
+  if (["common", "uncommon", "rare"].includes(r)) return false;
+  if (r === "double rare") return pct != null && pct > 10;
   return true;
 }
 
@@ -29,6 +22,7 @@ export default function MoversSection({ items }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const collectionIds = new Set((items || []).map((i) => i.card_id));
       try {
         const hist = await base44.entities.CardPriceHistory.list("-snapshot_date", 500);
         if (cancelled) return;
@@ -38,13 +32,11 @@ export default function MoversSection({ items }) {
           if (!latestByCard.has(h.card_id)) latestByCard.set(h.card_id, h);
           (allByCard[h.card_id] ||= []).push(h);
         }
-        const out = [];
-        for (const [cid, latest] of latestByCard) {
+        const buildMover = (latest, cid) => {
           let pct = latest.pct_30d;
           let prev = null;
           const snaps = (allByCard[cid] || []).filter((s) => s.price > 0);
           if (snaps.length >= 2) prev = snaps[snaps.length - 1].price;
-          // Fallback: own snapshot history when cardmarket 30d trend is missing.
           if (pct == null && snaps.length >= 2) {
             const earliest = snaps[snaps.length - 1];
             const latestNz = snaps[0];
@@ -53,70 +45,105 @@ export default function MoversSection({ items }) {
               prev = earliest.price;
             }
           }
-          if (pct == null || latest.price <= 0) continue;
-          // Premium-rarity filter: Double Rares need >10%, others always qualify.
-          if (!isMoverEligible(latest.rarity, pct)) continue;
-          out.push({
-            id: cid,
-            card_id: cid,
-            name: latest.name,
-            image_small: latest.image_small,
-            rarity: latest.rarity,
-            pct, prev: prev ?? latest.price, last: latest.price,
-          });
+          if (pct == null || latest.price <= 0) return null;
+          if (!isMoverEligible(latest.rarity, pct)) return null;
+          return {
+            id: cid, card_id: cid,
+            name: latest.name, image_small: latest.image_small,
+            rarity: latest.rarity, pct, prev: prev ?? latest.price, last: latest.price,
+          };
+        };
+        const collectionMovers = [];
+        const marketMovers = [];
+        for (const [cid, latest] of latestByCard) {
+          const m = buildMover(latest, cid);
+          if (!m) continue;
+          if (collectionIds.has(cid)) collectionMovers.push(m);
+          marketMovers.push(m);
         }
-        setMovers(out);
+        setMovers({ collection: collectionMovers, market: marketMovers });
       } catch {
-        if (!cancelled) setMovers([]);
+        if (!cancelled) setMovers({ collection: [], market: [] });
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [items]);
 
   const ready = movers !== null;
-  const gainers = ready ? movers.filter((m) => m.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 6) : [];
-  const losers = ready ? movers.filter((m) => m.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 6) : [];
+  const pick = (list, dir) => {
+    const sorted = [...list].sort((a, b) => (dir === "up" ? b.pct - a.pct : a.pct - b.pct));
+    return sorted[0] || null;
+  };
 
-  const Row = ({ m }) => {
-    const up = m.pct >= 0;
-    const style = getRarityStyle(m.rarity);
+  const colGainer = ready ? pick(movers.collection, "up") : null;
+  const colLoser = ready ? pick(movers.collection, "down") : null;
+  const mktGainer = ready ? pick(movers.market, "up") : null;
+  const mktLoser = ready ? pick(movers.market, "down") : null;
+
+  const MoverCard = ({ m, dir }) => {
+    const up = dir === "up";
+    const style = getRarityStyle(m?.rarity);
+    if (!m) return (
+      <div className="flex-1 rounded-xl border border-dashed border-white/5 p-4 text-center text-xs text-slate-500">
+        No eligible card yet
+      </div>
+    );
     return (
-      <div className="flex items-center gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] p-2">
-        <div className="relative w-8 h-10 shrink-0 rounded overflow-hidden">
+      <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+        <div className="relative w-12 h-14 shrink-0 rounded overflow-hidden">
           <img src={m.image_small} alt={m.name} className="w-full h-full object-cover" loading="lazy" />
-          <div className="absolute inset-0 ring-1 ring-inset" style={{ boxShadow: `inset 0 0 10px ${style.glow}` }} />
+          <div className="absolute inset-0 ring-1 ring-inset" style={{ boxShadow: `inset 0 0 12px ${style.glow}` }} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-medium truncate">{m.name}</div>
-          <div className="text-[10px] text-slate-500">{money(m.prev)} → {money(m.last)}</div>
+          <div className="text-sm font-medium truncate">{m.name}</div>
+          <div className="text-[11px] text-slate-500">{money(m.prev)} → {money(m.last)}</div>
+          <div className={`text-sm font-bold ${up ? "text-emerald-400" : "text-red-400"}`}>
+            {up ? "+" : ""}{m.pct.toFixed(1)}%
+          </div>
         </div>
-        <div className={`text-xs font-semibold shrink-0 ${up ? "text-emerald-400" : "text-red-400"}`}>
-          {up ? "+" : ""}{m.pct.toFixed(1)}%
-        </div>
+        {up ? <TrendingUp className="w-5 h-5 text-emerald-400 shrink-0" /> : <TrendingDown className="w-5 h-5 text-red-400 shrink-0" />}
       </div>
     );
   };
 
-  const Panel = ({ title, icon, list, accent }) => (
-    <div>
-      <div className="flex items-center gap-2 mb-2 text-xs uppercase tracking-widest text-slate-500">
-        <span className={accent}>{icon}</span>{title}
+  const Section = ({ title, subtitle, gainer, loser }) => (
+    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+      <div className="mb-4">
+        <div className="font-semibold">{title}</div>
+        <div className="text-[10px] text-slate-500 mt-0.5">{subtitle}</div>
       </div>
-      {list.length === 0
-        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No premium-rarity cards with price movement yet — movers appear as market data accumulates.</div>
-        : <div className="space-y-2">{list.map((m) => <Row key={m.id} m={m} />)}</div>}
+      <div className="space-y-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5 text-[10px] uppercase tracking-widest text-emerald-400"><TrendingUp className="w-3 h-3" /> Biggest Gainer</div>
+          <MoverCard m={gainer} dir="up" />
+        </div>
+        <div>
+          <div className="flex items-center gap-2 mb-1.5 text-[10px] uppercase tracking-widest text-red-400"><TrendingDown className="w-3 h-3" /> Biggest Loser</div>
+          <MoverCard m={loser} dir="down" />
+        </div>
+      </div>
     </div>
   );
 
   return (
-    <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <div className="font-semibold mb-4">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">Premium rarities · 30-day market change</span></div>
+    <section className="space-y-5">
+      <div className="font-semibold text-lg">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">Premium rarities · 30-day market change</span></div>
       {!ready ? (
         <div className="grid place-items-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-500" /></div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-5">
-          <Panel title="Top Gainers" icon={<TrendingUp className="w-3.5 h-3.5" />} list={gainers} accent="text-emerald-400" />
-          <Panel title="Top Losers" icon={<TrendingDown className="w-3.5 h-3.5" />} list={losers} accent="text-red-400" />
+        <div className="grid md:grid-cols-2 gap-5">
+          <Section
+            title="Your Collection"
+            subtitle="Biggest swings among cards you own"
+            gainer={colGainer}
+            loser={colLoser}
+          />
+          <Section
+            title="Entire Market"
+            subtitle="Biggest swings across all tracked cards"
+            gainer={mktGainer}
+            loser={mktLoser}
+          />
         </div>
       )}
     </section>
