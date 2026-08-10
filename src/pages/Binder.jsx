@@ -25,15 +25,39 @@ export default function Binder() {
   const { toast } = useToast();
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       // Fetch collection and sets independently so a transient API hiccup
       // on one doesn't nuke the other.
+      let list = [];
       try {
-        setItems(await base44.entities.CollectionCard.list("-updated_date", 500));
+        list = await base44.entities.CollectionCard.list("-updated_date", 500);
       } catch { toast({ title: "Could not load collection", variant: "destructive" }); }
+      if (cancelled) return;
+      setItems(list);
       setSets(await getSets());
       setLoading(false);
+
+      // Auto-refresh prices for cards that have no market price yet — the
+      // price extraction logic has been improved to check more TCGPlayer
+      // fields (directLow, mid), so many cards that previously showed "—"
+      // will now get a real price without the user clicking Refresh.
+      const unpriced = list.filter((i) => !i.current_price || i.current_price === 0).map((i) => i.card_id).filter(Boolean);
+      if (unpriced.length === 0) return;
+      try {
+        const prices = await fetchCardPrices(unpriced);
+        if (cancelled) return;
+        const updates = list
+          .filter((i) => prices[i.card_id] != null && prices[i.card_id] > 0 && prices[i.card_id] !== i.current_price)
+          .map((i) => ({ id: i.id, current_price: prices[i.card_id] }));
+        if (updates.length) {
+          await base44.entities.CollectionCard.bulkUpdate(updates);
+          if (cancelled) return;
+          setItems(await base44.entities.CollectionCard.list("-updated_date", 500));
+        }
+      } catch {}
     })();
+    return () => { cancelled = true; };
   }, []);
 
   const setMap = useMemo(() => { const m = {}; sets.forEach((s) => { m[s.id] = s; }); return m; }, [sets]);
