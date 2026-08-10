@@ -29,7 +29,9 @@ export default function MoversSection({ items }) {
         const latestByCard = new Map();
         const allByCard = {};
         for (const h of hist) {
-          if (!latestByCard.has(h.card_id)) latestByCard.set(h.card_id, h);
+          // Prefer the record with a valid price when deduping by card_id.
+          const prev = latestByCard.get(h.card_id);
+          if (!prev || (h.price > 0 && !(prev.price > 0))) latestByCard.set(h.card_id, h);
           (allByCard[h.card_id] ||= []).push(h);
         }
         const buildMover = (latest, cid) => {
@@ -70,57 +72,61 @@ export default function MoversSection({ items }) {
   }, [items]);
 
   const ready = movers !== null;
-  const pick = (list, dir) => {
-    const sorted = [...list].sort((a, b) => (dir === "up" ? b.pct - a.pct : a.pct - b.pct));
-    return sorted[0] || null;
-  };
+  const MAX = 6;
+  const pickTop = (list, dir) =>
+    [...list].filter((m) => (dir === "up" ? m.pct > 0 : m.pct < 0))
+      .sort((a, b) => (dir === "up" ? b.pct - a.pct : a.pct - b.pct))
+      .slice(0, MAX);
 
-  const colGainer = ready ? pick(movers.collection, "up") : null;
-  const colLoser = ready ? pick(movers.collection, "down") : null;
-  const mktGainer = ready ? pick(movers.market, "up") : null;
-  const mktLoser = ready ? pick(movers.market, "down") : null;
+  const colGainers = ready ? pickTop(movers.collection, "up") : [];
+  const colLosers = ready ? pickTop(movers.collection, "down") : [];
+  const mktGainers = ready ? pickTop(movers.market, "up") : [];
+  const mktLosers = ready ? pickTop(movers.market, "down") : [];
 
-  const MoverCard = ({ m, dir }) => {
+  const MoverRow = ({ m, dir }) => {
     const up = dir === "up";
-    const style = getRarityStyle(m?.rarity);
-    if (!m) return (
-      <div className="flex-1 rounded-xl border border-dashed border-white/5 p-4 text-center text-xs text-slate-500">
-        No eligible card yet
-      </div>
-    );
+    const style = getRarityStyle(m.rarity);
     return (
-      <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3">
-        <div className="relative w-12 h-14 shrink-0 rounded overflow-hidden">
+      <div className="flex items-center gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] p-2">
+        <div className="relative w-9 h-11 shrink-0 rounded overflow-hidden">
           <img src={m.image_small} alt={m.name} className="w-full h-full object-cover" loading="lazy" />
-          <div className="absolute inset-0 ring-1 ring-inset" style={{ boxShadow: `inset 0 0 12px ${style.glow}` }} />
+          <div className="absolute inset-0 ring-1 ring-inset" style={{ boxShadow: `inset 0 0 10px ${style.glow}` }} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate">{m.name}</div>
-          <div className="text-[11px] text-slate-500">{money(m.prev)} → {money(m.last)}</div>
-          <div className={`text-sm font-bold ${up ? "text-emerald-400" : "text-red-400"}`}>
-            {up ? "+" : ""}{m.pct.toFixed(1)}%
-          </div>
+          <div className="text-xs font-medium truncate">{m.name}</div>
+          <div className="text-[10px] text-slate-500">{money(m.prev)} → {money(m.last)}</div>
         </div>
-        {up ? <TrendingUp className="w-5 h-5 text-emerald-400 shrink-0" /> : <TrendingDown className="w-5 h-5 text-red-400 shrink-0" />}
+        <div className={`text-xs font-semibold shrink-0 ${up ? "text-emerald-400" : "text-red-400"}`}>
+          {m.pct > 0 ? "+" : ""}{m.pct.toFixed(1)}%
+        </div>
       </div>
     );
   };
 
-  const Section = ({ title, subtitle, gainer, loser }) => (
+  const List = ({ items, dir, label, icon, accent }) => (
+    <div>
+      <div className={`flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-widest ${accent}`}>
+        {icon}{label}
+      </div>
+      {items.length === 0 ? (
+        <div className="text-xs text-slate-500 py-4 text-center rounded-xl border border-dashed border-white/5">
+          No eligible cards yet
+        </div>
+      ) : (
+        <div className="space-y-2">{items.map((m) => <MoverRow key={m.id} m={m} dir={dir} />)}</div>
+      )}
+    </div>
+  );
+
+  const Section = ({ title, subtitle, gainers, losers }) => (
     <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
       <div className="mb-4">
         <div className="font-semibold">{title}</div>
         <div className="text-[10px] text-slate-500 mt-0.5">{subtitle}</div>
       </div>
-      <div className="space-y-3">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 text-[10px] uppercase tracking-widest text-emerald-400"><TrendingUp className="w-3 h-3" /> Biggest Gainer</div>
-          <MoverCard m={gainer} dir="up" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-1.5 text-[10px] uppercase tracking-widest text-red-400"><TrendingDown className="w-3 h-3" /> Biggest Loser</div>
-          <MoverCard m={loser} dir="down" />
-        </div>
+      <div className="space-y-4">
+        <List items={gainers} dir="up" label="Top Gainers" icon={<TrendingUp className="w-3 h-3" />} accent="text-emerald-400" />
+        <List items={losers} dir="down" label="Top Losers" icon={<TrendingDown className="w-3 h-3" />} accent="text-red-400" />
       </div>
     </div>
   );
@@ -135,14 +141,14 @@ export default function MoversSection({ items }) {
           <Section
             title="Your Collection"
             subtitle="Biggest swings among cards you own"
-            gainer={colGainer}
-            loser={colLoser}
+            gainers={colGainers}
+            losers={colLosers}
           />
           <Section
             title="Entire Market"
             subtitle="Biggest swings across all tracked cards"
-            gainer={mktGainer}
-            loser={mktLoser}
+            gainers={mktGainers}
+            losers={mktLosers}
           />
         </div>
       )}
