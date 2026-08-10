@@ -28,6 +28,7 @@ export default async function(req) {
     const existingByCard = new Map((existing || []).map((h) => [h.card_id, h]));
 
     let recorded = 0, updated = 0, failed = 0;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     async function worker() {
       while (queue.length) {
         const id = queue.shift();
@@ -56,14 +57,17 @@ export default async function(req) {
             recorded++;
           }
         } catch { failed++; }
+        await sleep(350); // pace requests to avoid TCG API rate-limit 500s
       }
     }
-    // Only process cards that either have no snapshot today or lack pct_30d.
+    // Only process cards that still lack a usable snapshot today (no price or
+    // no pct_30d). Successful cards aren't re-fetched, keeping the run fast
+    // and within the function timeout; failures retry on the next run.
     const queue = ids.filter((id) => {
       const prev = existingByCard.get(id);
-      return !prev || prev.pct_30d == null;
+      return !prev || !prev.price || prev.pct_30d == null;
     });
-    await Promise.all(Array.from({ length: 4 }, worker));
+    await Promise.all(Array.from({ length: 2 }, worker));
 
     return Response.json({ recorded, updated, failed, tracked: ids.length });
   } catch (error) {

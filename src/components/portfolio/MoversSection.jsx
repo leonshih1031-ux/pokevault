@@ -5,30 +5,15 @@ import { getRarityStyle } from "@/lib/pokemonApi";
 
 const money = (n) => `$${(n || 0).toFixed(2)}`;
 
-// "Above ex" = the ultra+ tier: V / VMAX / VSTAR / GX / Ultra Rare /
-// Illustration / Special Illustration Rare / Secret Rare / ACE / Rainbow.
-// Plain ex (Double Rare / "ex") is only included when it rose by a lot.
-const EX_ROSE_THRESHOLD = 10; // percent
-
-function isAboveEx(rarity) {
+// "Above RR" = anything rarer than a plain Rare: Double Rare (ex),
+// Rare Holo, V / VMAX / VSTAR, Ultra Rare, Illustration / Special Illustration,
+// Secret Rare, ACE, Rainbow, etc. Commons, uncommons and plain Rares are excluded.
+function isAboveRR(rarity) {
   const r = (rarity || "").toLowerCase().trim();
   if (!r) return false;
-  if (r.includes("secret") || r.includes("rainbow")) return true;
-  if (r.includes("special")) return true;
-  if (r.includes("ultra")) return true;
-  if (r.includes("illustration")) return true;
-  if (r.includes("vmax") || r.includes("vstar")) return true;
-  if (r.includes(" gx") || r.endsWith("gx") || r === "gx") return true;
-  if (r === "ace" || r.includes("ace spec")) return true;
-  if (r === "v" || r.endsWith(" v") || r.includes(" v ")) return true;
-  return false;
-}
-
-function isEx(rarity) {
-  const r = (rarity || "").toLowerCase().trim();
-  if (r.includes("double rare")) return true;
-  if (r.includes(" ex") || r.endsWith("ex") || r === "ex") return true;
-  return false;
+  if (r === "common" || r === "uncommon") return false;
+  if (r === "rare") return false; // plain Rare is the cutoff, not included
+  return true;
 }
 
 export default function MoversSection({ items }) {
@@ -65,8 +50,8 @@ export default function MoversSection({ items }) {
             }
           }
           if (pct == null || latest.price <= 0) continue;
-          // Above-ex always; plain ex only if it rose by a lot.
-          if (!isAboveEx(item.rarity) && !(isEx(item.rarity) && pct >= EX_ROSE_THRESHOLD)) continue;
+          // Above RR (rarer than a plain Rare) — ex, Ultra Rare, V/VSTAR, etc.
+          if (!isAboveRR(item.rarity)) continue;
           out.push({ ...item, pct, prev: prev ?? latest.price, last: latest.price });
         }
         setMovers(out);
@@ -78,8 +63,8 @@ export default function MoversSection({ items }) {
   }, [items]);
 
   const ready = movers !== null;
-  const gainers = ready ? movers.filter((m) => m.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 5) : [];
-  const losers = ready ? movers.filter((m) => m.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 5) : [];
+  const gainers = ready ? movers.filter((m) => m.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 6) : [];
+  const losers = ready ? movers.filter((m) => m.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 6) : [];
 
   const Row = ({ m }) => {
     const up = m.pct >= 0;
@@ -107,14 +92,14 @@ export default function MoversSection({ items }) {
         <span className={accent}>{icon}</span>{title}
       </div>
       {list.length === 0
-        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No EX+ cards with price movement yet — movers appear as market data accumulates.</div>
+        ? <div className="text-xs text-slate-500 py-6 text-center rounded-xl border border-dashed border-white/5">No RR+ cards with price movement yet — movers appear as market data accumulates.</div>
         : <div className="space-y-2">{list.map((m) => <Row key={m.id} m={m} />)}</div>}
     </div>
   );
 
   return (
     <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <div className="font-semibold mb-4">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">EX+ · 30-day market change</span></div>
+      <div className="font-semibold mb-4">Biggest Movers <span className="text-[10px] font-normal text-slate-500 ml-1">RR+ · 30-day market change</span></div>
       {!ready ? (
         <div className="grid place-items-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-500" /></div>
       ) : (

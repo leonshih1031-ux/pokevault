@@ -36,10 +36,23 @@ export function getCardMarketTrendPct(card) {
 }
 
 export async function fetchCard(id) {
-  try {
-    const res = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`, { headers: { Accept: "application/json" } });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.data || null;
-  } catch { return null; }
+  const url = `https://api.pokemontcg.io/v2/cards/${id}`;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      // 429 / 5xx: back off and retry. 4xx (non-429): no point retrying.
+      if (res.status === 429 || res.status >= 500) {
+        await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+        continue;
+      }
+      return null;
+    } catch {
+      await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+    }
+  }
+  return null;
 }
