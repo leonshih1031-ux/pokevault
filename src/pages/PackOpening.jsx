@@ -36,7 +36,7 @@ export default function PackOpening() {
       let cards = cacheRef.current[selectedSet.id];
       if (!cards) { cards = await getSetCards(selectedSet.id); cacheRef.current[selectedSet.id] = cards; }
       if (!cards || !cards.length) { toast({ title: "Could not load cards for this set — try again", variant: "destructive" }); return; }
-      const newPack = buildPack(cards);
+      const newPack = buildPack(cards, selectedSet.id, selectedSet.name);
       const value = newPack.reduce((s, c) => s + getCardPrice(c), 0);
       setChaseIds(getChaseCardIds(cards));
       await base44.entities.PackHistory.create({

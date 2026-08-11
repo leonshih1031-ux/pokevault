@@ -259,13 +259,58 @@ function categorizeByRarity(cards) {
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+// Sets with confirmed God Packs — all slots replaced by Illustration Rare+
+// cards at ~1/700-1000 odds. Sources: card-binder.com, r/PokemonTCG, eneba.com.
+// Crown Zenith and normal standard sets do NOT have god packs.
+const GOD_PACK_SET_IDS = new Set([
+  "sv3pt5",   // Pokémon 151
+  "sv9",      // Prismatic Evolutions
+  "me2pt5",   // Ascended Heroes
+  "swsh12",   // VSTAR Universe
+  "s4a",      // Shiny Star V (Japanese high-class)
+  "sv4a",     // Shiny Treasure ex (Japanese high-class)
+  "sv8a",     // Terastal Festival ex (Japanese = Prismatic Evolutions)
+]);
+const GOD_PACK_SET_NAMES = [
+  /pokemon 151/i,
+  /prismatic evolutions/i,
+  /ascended heroes/i,
+  /vstar universe/i,
+  /black bolt/i,
+  /white flare/i,
+  /shiny star v/i,
+  /shiny treasure/i,
+  /terastal festival/i,
+];
+
+export function hasGodPacks(setId, setName = "") {
+  if (GOD_PACK_SET_IDS.has(setId)) return true;
+  return GOD_PACK_SET_NAMES.some((re) => re.test(setName));
+}
+
 // Builds a 10-card pack in legit reveal order: commons → uncommons → reverse →
 // rare/hit. Hit odds follow community-documented SV-era pull rates:
 //   Secret Rare ~1/200 · Special Illustration ~1/65 · Ultra Rare ~1/12 ·
 //   Illustration Rare ~1/20 · Holo Rare ~1/4 · Plain Rare the rest.
 // (Sources: pullmarket.io, dripshop.live, tcgplayer pull-rate studies.)
-export function buildPack(setCards) {
+//
+// God Packs: ~1/700 odds, ONLY for sets that actually have them. A god pack
+// replaces every slot with Illustration Rare+ cards. For all other sets
+// (including Crown Zenith and normal sets), the standard rarity distribution
+// is used — no god packs ever.
+export function buildPack(setCards, setId = "", setName = "") {
   const b = categorizeByRarity(setCards);
+
+  // God Pack check: only for confirmed sets, ~1 in 700 odds.
+  if (hasGodPacks(setId, setName) && Math.random() < 1 / 700) {
+    const godPool = [...b.illus, ...b.ultra, ...b.sar, ...b.secret];
+    if (godPool.length >= 5) {
+      const pack = [];
+      for (let i = 0; i < 10; i++) pack.push(pick(godPool));
+      return pack;
+    }
+  }
+
   const pool = (arr) => (arr.length ? arr : setCards);
   const pack = [];
   for (let i = 0; i < 5; i++) pack.push(pick(pool(b.common)));        // bulk commons
