@@ -294,6 +294,8 @@ export function getChaseCardIds(setCards) {
 
 // Refresh market prices for a batch of cards (used by the Binder's "Refresh Prices").
 // Fetches with limited concurrency and respects the per-card cache.
+// Falls back to TCGPlayer via tcgwatchtower.com for cards where the Pokémon TCG
+// API has no price data (common for very new or niche sets like Pitch Black).
 export async function fetchCardPrices(cardIds, concurrency = 4) {
   const results = {};
   const queue = [...new Set((cardIds || []).filter(Boolean))];
@@ -307,5 +309,30 @@ export async function fetchCardPrices(cardIds, concurrency = 4) {
     }
   }
   await Promise.all(Array.from({ length: concurrency }, worker));
+
+  // Fallback: for cards still unpriced, fetch from TCGPlayer via the
+  // tcgwatchtower backend function, grouped by set (one call per set).
+  const unpriced = [...new Set((cardIds || []).filter(Boolean))].filter(
+    (id) => !results[id] || results[id] === 0
+  );
+  if (unpriced.length === 0) return results;
+
+  const bySet = {};
+  for (const id of unpriced) {
+    const setId = id.replace(/-\d+$/, "");
+    (bySet[setId] ||= []).push(id);
+  }
+
+  const { base44 } = await import("@/api/base44Client");
+  await Promise.all(
+    Object.entries(bySet).map(async ([setId, ids]) => {
+      try {
+        const res = await base44.functions.invoke("fetchTcgplayerPrices", { set_id: setId });
+        const fp = res?.data?.prices || {};
+        for (const id of ids) if (fp[id] > 0) results[id] = fp[id];
+      } catch {}
+    })
+  );
+
   return results;
 }

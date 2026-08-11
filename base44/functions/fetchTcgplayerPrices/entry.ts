@@ -12,8 +12,9 @@ export default async function(req) {
     if (!setId) return Response.json({ error: 'set_id is required' }, { status: 400 });
 
     // tcgwatchtower uses zero-padded set IDs (me05, sv03) while the Pokémon TCG
-    // API uses unpadded ones (me5, sv3). Normalize by padding the numeric suffix.
-    const normalizedId = setId.replace(/(\d+)$/, (m) => m.padStart(2, '0'));
+    // API uses unpadded ones (me5, sv3). Pad the FIRST numeric group to 2 digits
+    // so "me2pt5" → "me02pt5" and "sv3" → "sv03" (already-2-digit stays as-is).
+    const normalizedId = setId.replace(/^([a-z]+)(\d+)/i, (m, p, n) => p + n.padStart(2, '0'));
 
     // 1. Fetch the sets list to find the slug for this set.
     const setsRes = await fetch('https://tcgwatchtower.com/sets.json', {
