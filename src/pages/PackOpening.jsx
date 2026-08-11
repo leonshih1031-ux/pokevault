@@ -15,7 +15,9 @@ export default function PackOpening() {
   const [pack, setPack] = useState(null);
   const [chaseIds, setChaseIds] = useState(new Set());
   const [history, setHistory] = useState([]);
+  const [preloading, setPreloading] = useState(false);
   const cacheRef = useRef({});
+  const preloadRef = useRef({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -29,12 +31,35 @@ export default function PackOpening() {
     try { const h = await base44.entities.PackHistory.list("-opened_date", 8); setHistory(h); } catch {}
   };
 
+  // Preload cards when a set is selected so packs open instantly.
+  useEffect(() => {
+    if (!selectedSet) return;
+    if (cacheRef.current[selectedSet.id]) return;
+    if (preloadRef.current[selectedSet.id]) return;
+    preloadRef.current[selectedSet.id] = (async () => {
+      setPreloading(true);
+      try {
+        const cards = await getSetCards(selectedSet.id);
+        cacheRef.current[selectedSet.id] = cards;
+      } catch {}
+      finally { setPreloading(false); }
+    })();
+  }, [selectedSet]);
+
   const openPack = async () => {
     if (!selectedSet) return;
     setOpening(true);
     try {
       let cards = cacheRef.current[selectedSet.id];
-      if (!cards) { cards = await getSetCards(selectedSet.id); cacheRef.current[selectedSet.id] = cards; }
+      // Wait for any in-flight preload, then retry up to 3 times.
+      if (!cards && preloadRef.current[selectedSet.id]) {
+        await preloadRef.current[selectedSet.id];
+        cards = cacheRef.current[selectedSet.id];
+      }
+      for (let attempt = 0; (!cards || !cards.length) && attempt < 3; attempt++) {
+        cards = await getSetCards(selectedSet.id);
+        if (cards) cacheRef.current[selectedSet.id] = cards;
+      }
       if (!cards || !cards.length) { toast({ title: "Could not load cards for this set — try again", variant: "destructive" }); return; }
       const newPack = buildPack(cards, selectedSet.id, selectedSet.name);
       const value = newPack.reduce((s, c) => s + getCardPrice(c), 0);
@@ -101,7 +126,7 @@ export default function PackOpening() {
         </div>
         <Button size="lg" disabled={opening || !selectedSet} onClick={openPack}
           className="bg-gradient-to-r from-emerald-400 to-blue-500 hover:opacity-90 text-[#0e1014] font-semibold">
-          {opening ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Opening…</> : <><Sparkles className="w-4 h-4 mr-2" /> Open Pack</>}
+          {opening ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Opening…</> : preloading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading cards…</> : <><Sparkles className="w-4 h-4 mr-2" /> Open Pack</>}
         </Button>
       </section>
 

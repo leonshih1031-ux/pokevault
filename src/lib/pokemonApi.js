@@ -54,7 +54,7 @@ const SET_EXTRAS = { swsh12pt5: ["swsh12pt5gg"] };
 // Validate the content-type and retry a few times before giving up.
 // Fetch with a hard timeout so a hung/rate-limited request fails fast instead
 // of stalling the whole pack-opening flow.
-async function fetchJson(url, { timeoutMs = 12000, retries = 3 } = {}) {
+async function fetchJson(url, { timeoutMs = 15000, retries = 5 } = {}) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -63,18 +63,18 @@ async function fetchJson(url, { timeoutMs = 12000, retries = 3 } = {}) {
       clearTimeout(timer);
       const ct = res.headers.get("content-type") || "";
       if (!ct.includes("application/json")) {
-        if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * (attempt + 1))); continue; }
+        if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * Math.pow(2, attempt))); continue; }
         return null;
       }
       if (!res.ok) {
         if (res.status === 400 || res.status === 404) return null;
-        if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * (attempt + 1))); continue; }
+        if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * Math.pow(2, attempt))); continue; }
         return null;
       }
       return await res.json();
     } catch {
       clearTimeout(timer);
-      if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * (attempt + 1))); continue; }
+      if (attempt < retries) { await new Promise((r) => setTimeout(r, 600 * Math.pow(2, attempt))); continue; }
       return null;
     }
   }
@@ -82,7 +82,7 @@ async function fetchJson(url, { timeoutMs = 12000, retries = 3 } = {}) {
 }
 
 export async function getSets() {
-  const cached = cacheGet("pk_sets", 24 * 3600 * 1000);
+  const cached = cacheGet("pk_sets", 7 * 24 * 3600 * 1000);
   if (cached) return cached;
   const json = await fetchJson(`${BASE}/sets?orderBy=-releaseDate&pageSize=100`);
   if (!json) {
@@ -102,7 +102,7 @@ export async function getSets() {
 
 export async function getCard(id) {
   const key = `pk_card_${id}`;
-  const cached = cacheGet(key, 6 * 3600 * 1000);
+  const cached = cacheGet(key, 24 * 3600 * 1000);
   if (cached) return cached;
   const json = await fetchJson(`${BASE}/cards/${id}`);
   if (!json) {
@@ -149,13 +149,23 @@ export async function searchCards({ query, setId, rarity, type, supertype, page 
 // then all remaining pages IN PARALLEL. Cached for 6h so re-opens are instant.
 export async function getSetCards(setId) {
   const key = `pk_cards_${setId}`;
-  const cached = cacheGet(key, 6 * 3600 * 1000);
+  const cached = cacheGet(key, 24 * 3600 * 1000);
   if (cached) return cached;
+
+  // Try the backend function first — it uses an API key (if configured) for
+  // 10,000 req/day vs 100 without, and the server's IP may not be rate-limited.
+  try {
+    const { base44 } = await import("@/api/base44Client");
+    const res = await base44.functions.invoke("fetchPokemonSetCards", { set_id: setId });
+    if (res?.cards?.length) { cachePut(key, res.cards); return res.cards; }
+  } catch {}
+
+  // Fallback: direct API call with generous retries and exponential backoff.
   const ids = [setId, ...(SET_EXTRAS[setId] || [])];
   let all = [];
   for (const id of ids) {
     const p1 = new URLSearchParams({ q: `set.id:${id}`, page: "1", pageSize: "250" });
-    const first = await fetchJson(`${BASE}/cards?${p1.toString()}`, { retries: 1, timeoutMs: 8000 });
+    const first = await fetchJson(`${BASE}/cards?${p1.toString()}`, { retries: 3, timeoutMs: 12000 });
     if (!first || !first.data) continue;
     all = all.concat(first.data);
     const total = first.totalCount || first.data.length;
@@ -164,7 +174,7 @@ export async function getSetCards(setId) {
       const rest = [];
       for (let p = 2; p <= pages; p++) {
         const pp = new URLSearchParams({ q: `set.id:${id}`, page: String(p), pageSize: "250" });
-        rest.push(fetchJson(`${BASE}/cards?${pp.toString()}`, { retries: 1, timeoutMs: 8000 }));
+        rest.push(fetchJson(`${BASE}/cards?${pp.toString()}`, { retries: 2, timeoutMs: 10000 }));
       }
       const results = await Promise.all(rest);
       for (const r of results) if (r && r.data) all = all.concat(r.data);
