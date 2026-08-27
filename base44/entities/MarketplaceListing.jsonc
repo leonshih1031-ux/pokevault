@@ -71,6 +71,11 @@
     "asking_price": {
       "type": "number"
     },
+    "platform_fee": {
+      "type": "number",
+      "description": "Platform fee percentage charged on this listing",
+      "default": 6
+    },
     "description": {
       "type": "string"
     },

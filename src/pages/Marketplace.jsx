@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Store, Loader2, Search as SearchIcon } from "lucide-react";
+import { Plus, Store, Loader2, Search as SearchIcon, CreditCard } from "lucide-react";
 import { getSets, getRarityStyle, CONDITIONS } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
 import CreateListingModal from "@/components/marketplace/CreateListingModal";
@@ -13,6 +13,8 @@ export default function Marketplace() {
   const [loading, setLoading] = useState(true);
   const [sets, setSets] = useState([]);
   const [userId, setUserId] = useState(null);
+  const [me, setMe] = useState(null);
+  const [connecting, setConnecting] = useState(false);
   const [query, setQuery] = useState("");
   const [setId, setSetId] = useState("");
   const [condition, setCondition] = useState("");
@@ -36,8 +38,26 @@ export default function Marketplace() {
   useEffect(() => {
     load();
     getSets().then(setSets).catch(() => {});
-    base44.auth.me().then((m) => setUserId(m.id)).catch(() => {});
+    base44.auth.me().then((m) => { setUserId(m.id); setMe(m); }).catch(() => {});
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("purchase") === "success") {
+      toast({ title: "Purchase complete!", description: "Your payment was processed successfully." });
+    } else if (params.get("purchase") === "cancelled") {
+      toast({ title: "Purchase cancelled", variant: "destructive" });
+    }
   }, []);
+
+  const connectStripe = async () => {
+    setConnecting(true);
+    try {
+      const res = await base44.functions.invoke("createSellerStripeAccount", {});
+      if (res.url) window.location.href = res.url;
+    } catch {
+      toast({ title: "Could not connect Stripe", variant: "destructive" });
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return listings.filter((l) => {
@@ -56,7 +76,15 @@ export default function Marketplace() {
           <h1 className="font-bold text-2xl md:text-3xl">Card marketplace</h1>
           <p className="text-sm text-slate-400">Buy, sell, and trade cards with other collectors.</p>
         </div>
-        <Button onClick={() => setCreating(true)} className="bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]"><Plus className="w-4 h-4 mr-1.5" /> Create Listing</Button>
+        <div className="flex items-center gap-2">
+          {me && !me.seller_stripe_account_id && (
+            <Button onClick={connectStripe} variant="outline" disabled={connecting} className="border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/10">
+              {connecting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CreditCard className="w-4 h-4 mr-1.5" />}
+              Connect Stripe to receive payouts
+            </Button>
+          )}
+          <Button onClick={() => setCreating(true)} className="bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]"><Plus className="w-4 h-4 mr-1.5" /> Create Listing</Button>
+        </div>
       </header>
 
       <div className="flex flex-col sm:flex-row gap-2">

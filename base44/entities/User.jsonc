@@ -20,6 +20,10 @@
     "bio": {
       "type": "string",
       "description": "Short bio shown on the public binder profile"
+    },
+    "seller_stripe_account_id": {
+      "type": "string",
+      "description": "Stripe Connect Express account ID for marketplace payouts"
     }
   },
   "required": [

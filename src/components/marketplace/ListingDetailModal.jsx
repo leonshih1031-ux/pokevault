@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trash2, Pencil, BadgeCheck, MapPin, Truck, Mail, Loader2 } from "lucide-react";
+import { Trash2, Pencil, BadgeCheck, MapPin, Truck, Mail, Loader2, CreditCard } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getRarityStyle } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,6 +40,26 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
     }
   };
 
+  const buyNow = async () => {
+    if (window.self !== window.top) {
+      toast({ title: "Checkout works only from a published app", variant: "destructive" });
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await base44.functions.invoke("createMarketplaceCheckout", { listing_id: listing.id });
+      if (res.url) {
+        window.location.href = res.url;
+      } else {
+        toast({ title: res.error || "Could not start checkout", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: err.message || "Could not start checkout", variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#181b22] border-white/10 text-slate-100 max-w-2xl">
@@ -68,6 +88,25 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
             </div>
           </div>
         </div>
+        {!mine && (() => {
+          const feePercent = listing.platform_fee || 6;
+          const cardPrice = listing.asking_price || 0;
+          const platformFee = cardPrice * feePercent / 100;
+          const total = cardPrice + platformFee;
+          return (
+            <div className="space-y-3 mt-2">
+              <div className="rounded-lg bg-white/5 p-3 space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-slate-400">Card price</span><span>${cardPrice.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-400">Platform fee ({feePercent}%)</span><span>${platformFee.toFixed(2)}</span></div>
+                <div className="flex justify-between font-bold border-t border-white/10 pt-1.5"><span>Total</span><span className="text-emerald-400">${total.toFixed(2)}</span></div>
+              </div>
+              <Button onClick={buyNow} disabled={busy} className="w-full bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]">
+                {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <CreditCard className="w-4 h-4 mr-1.5" />}
+                Buy Now · ${total.toFixed(2)}
+              </Button>
+            </div>
+          );
+        })()}
         {mine && (
           <DialogFooter className="gap-2 sm:justify-end">
             <Button variant="ghost" onClick={() => onEdit?.(listing)} disabled={busy} className="text-slate-300"><Pencil className="w-4 h-4 mr-1.5" /> Edit</Button>
