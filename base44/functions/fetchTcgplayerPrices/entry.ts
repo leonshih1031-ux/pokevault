@@ -5,8 +5,14 @@
 // Input:  { set_id: "me5" }
 // Output:  { prices: { "me5-41": 0.07, "me5-27": 0.55, ... }, source: "tcgwatchtower" }
 
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+
 export default async function(req) {
   try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
     const body = await req.json().catch(() => ({}));
     const setId = body?.set_id;
     if (!setId) return Response.json({ error: 'set_id is required' }, { status: 400 });
