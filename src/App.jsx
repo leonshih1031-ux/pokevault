@@ -20,7 +20,7 @@ import Alerts from '@/pages/Alerts';
 import Scan from '@/pages/Scan';
 import News from '@/pages/News';
 import PublicBinder from '@/pages/PublicBinder';
-import { CartProvider } from '@/lib/cart';
+import { CartProvider } from '@/lib/cartContext';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();

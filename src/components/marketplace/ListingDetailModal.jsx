@@ -5,7 +5,7 @@ import { Trash2, Pencil, BadgeCheck, MapPin, Truck, Mail, Loader2, ShoppingCart,
 import { base44 } from "@/api/base44Client";
 import { getRarityStyle } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
-import { useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cartContext";
 
 export default function ListingDetailModal({ open, onOpenChange, listing, mine, onChanged, onEdit }) {
   const [busy, setBusy] = useState(false);

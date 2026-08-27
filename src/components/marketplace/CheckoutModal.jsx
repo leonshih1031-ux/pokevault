@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Truck, Package, MapPin } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cartContext";
 import { SHIPPING_COMPANIES, COUNTRIES } from "@/lib/shipping";
 import { useToast } from "@/components/ui/use-toast";
 

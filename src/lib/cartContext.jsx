@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, createElement } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 const CartContext = createContext(null);
 const CART_KEY = "pokevault_cart";
@@ -36,10 +36,10 @@ export function CartProvider({ children }) {
   const clear = useCallback(() => setItems([]), []);
   const has = useCallback((id) => items.some((i) => i.id === id), [items]);
 
-  return createElement(
-    CartContext.Provider,
-    { value: { items, addItem, removeItem, clear, has, count: items.length } },
-    children
+  return (
+    <CartContext.Provider value={{ items, addItem, removeItem, clear, has, count: items.length }}>
+      {children}
+    </CartContext.Provider>
   );
 }
 

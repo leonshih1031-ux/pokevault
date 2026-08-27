@@ -6,7 +6,7 @@ import { Plus, Store, Loader2, Search as SearchIcon, CreditCard, ShoppingCart, T
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { getSets, getRarityStyle, CONDITIONS } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
-import { useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cartContext";
 import CreateListingModal from "@/components/marketplace/CreateListingModal";
 import ListingDetailModal from "@/components/marketplace/ListingDetailModal";
 import CheckoutModal from "@/components/marketplace/CheckoutModal";
