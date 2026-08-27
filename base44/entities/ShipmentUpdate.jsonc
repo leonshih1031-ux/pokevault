@@ -1,0 +1,53 @@
+{
+  "name": "ShipmentUpdate",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string"
+    },
+    "seller_id": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "preparing",
+        "shipped",
+        "in_transit",
+        "delivered"
+      ]
+    },
+    "location": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string"
+    },
+    "tracking_number": {
+      "type": "string"
+    },
+    "shipping_company": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "order_id",
+    "seller_id",
+    "status"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

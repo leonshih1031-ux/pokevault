@@ -1,0 +1,69 @@
+{
+  "name": "OrderItem",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string"
+    },
+    "listing_id": {
+      "type": "string"
+    },
+    "seller_id": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "card_name": {
+      "type": "string"
+    },
+    "card_image": {
+      "type": "string"
+    },
+    "set_name": {
+      "type": "string"
+    },
+    "number": {
+      "type": "string"
+    },
+    "asking_price": {
+      "type": "number"
+    },
+    "platform_fee": {
+      "type": "number"
+    },
+    "condition": {
+      "type": "string"
+    },
+    "variant": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "preparing",
+        "shipped",
+        "in_transit",
+        "delivered"
+      ],
+      "default": "preparing"
+    }
+  },
+  "required": [
+    "order_id",
+    "seller_id",
+    "card_name"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

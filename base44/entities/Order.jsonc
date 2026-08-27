@@ -1,0 +1,80 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "buyer_name": {
+      "type": "string"
+    },
+    "buyer_email": {
+      "type": "string"
+    },
+    "shipping_country": {
+      "type": "string"
+    },
+    "shipping_address": {
+      "type": "string"
+    },
+    "shipping_city": {
+      "type": "string"
+    },
+    "shipping_state": {
+      "type": "string"
+    },
+    "shipping_postal_code": {
+      "type": "string"
+    },
+    "shipping_phone": {
+      "type": "string"
+    },
+    "shipping_company": {
+      "type": "string"
+    },
+    "tracking_number": {
+      "type": "string"
+    },
+    "total_amount": {
+      "type": "number"
+    },
+    "platform_fee_total": {
+      "type": "number"
+    },
+    "items_count": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_payment",
+        "paid",
+        "preparing",
+        "shipped",
+        "in_transit",
+        "delivered",
+        "cancelled"
+      ],
+      "default": "pending_payment"
+    },
+    "stripe_session_id": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "shipping_country",
+    "shipping_address"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

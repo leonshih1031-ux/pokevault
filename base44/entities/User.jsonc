@@ -24,6 +24,30 @@
     "seller_stripe_account_id": {
       "type": "string",
       "description": "Stripe Connect Express account ID for marketplace payouts"
+    },
+    "country": {
+      "type": "string",
+      "description": "User's country for shipping and selling"
+    },
+    "address_line": {
+      "type": "string",
+      "description": "Street address for shipping"
+    },
+    "city": {
+      "type": "string",
+      "description": "City for shipping"
+    },
+    "state_region": {
+      "type": "string",
+      "description": "State or region for shipping"
+    },
+    "postal_code": {
+      "type": "string",
+      "description": "Postal/ZIP code for shipping"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number for shipping contact"
     }
   },
   "required": [

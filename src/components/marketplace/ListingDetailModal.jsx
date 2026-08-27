@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trash2, Pencil, BadgeCheck, MapPin, Truck, Mail, Loader2, CreditCard } from "lucide-react";
+import { Trash2, Pencil, BadgeCheck, MapPin, Truck, Mail, Loader2, ShoppingCart, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getRarityStyle } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
+import { useCart } from "@/lib/cart";
 
 export default function ListingDetailModal({ open, onOpenChange, listing, mine, onChanged, onEdit }) {
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
+  const { addItem, has } = useCart();
   if (!listing) return null;
+  const inCart = has(listing.id);
   const style = getRarityStyle(listing.rarity);
 
   const markSold = async () => {
@@ -40,24 +43,10 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
     }
   };
 
-  const buyNow = async () => {
-    if (window.self !== window.top) {
-      toast({ title: "Checkout works only from a published app", variant: "destructive" });
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await base44.functions.invoke("createMarketplaceCheckout", { listing_id: listing.id });
-      if (res.url) {
-        window.location.href = res.url;
-      } else {
-        toast({ title: res.error || "Could not start checkout", variant: "destructive" });
-      }
-    } catch (err) {
-      toast({ title: err.message || "Could not start checkout", variant: "destructive" });
-    } finally {
-      setBusy(false);
-    }
+  const addToCart = () => {
+    addItem(listing);
+    toast({ title: "Added to cart", description: "Go to the marketplace to checkout." });
+    onOpenChange(false);
   };
 
   return (
@@ -100,9 +89,8 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
                 <div className="flex justify-between"><span className="text-slate-400">Platform fee ({feePercent}%)</span><span>${platformFee.toFixed(2)}</span></div>
                 <div className="flex justify-between font-bold border-t border-white/10 pt-1.5"><span>Total</span><span className="text-emerald-400">${total.toFixed(2)}</span></div>
               </div>
-              <Button onClick={buyNow} disabled={busy} className="w-full bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]">
-                {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <CreditCard className="w-4 h-4 mr-1.5" />}
-                Buy Now · ${total.toFixed(2)}
+              <Button onClick={addToCart} disabled={inCart} className="w-full bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]">
+                {inCart ? <><Check className="w-4 h-4 mr-1.5" /> In Cart</> : <><ShoppingCart className="w-4 h-4 mr-1.5" /> Add to Cart · ${total.toFixed(2)}</>}
               </Button>
             </div>
           );
