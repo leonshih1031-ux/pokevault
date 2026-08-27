@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +81,7 @@ export default function Orders() {
         <p className="text-sm text-slate-400">Track purchases and manage shipments for your sales.</p>
       </header>
 
-      <div className="flex gap-2 border-b border-white/5 pb-px">
+      <div className="flex gap-2 border-b border-white/5">
         <TabButton active={tab === "purchases"} onClick={() => setTab("purchases")} icon={ShoppingBag} label="My Purchases" />
         <TabButton active={tab === "sales"} onClick={() => setTab("sales")} icon={Store} label="My Sales" />
       </div>

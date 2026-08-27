@@ -14,11 +14,13 @@ import Binder from '@/pages/Binder';
 import SearchPage from '@/pages/Search';
 import Wishlist from '@/pages/Wishlist';
 import Marketplace from '@/pages/Marketplace';
+import Orders from '@/pages/Orders';
 import SetList from '@/pages/SetList';
 import Alerts from '@/pages/Alerts';
 import Scan from '@/pages/Scan';
 import News from '@/pages/News';
 import PublicBinder from '@/pages/PublicBinder';
+import { CartProvider } from '@/lib/cart';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,6 +64,7 @@ const AuthenticatedApp = () => {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="/orders" element={<Orders />} />
         <Route path="/setlist" element={<SetList />} />
         <Route path="/alerts" element={<Alerts />} />
         <Route path="/scan" element={<Scan />} />
@@ -80,7 +83,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <AuthenticatedApp />
+          <CartProvider>
+            <AuthenticatedApp />
+          </CartProvider>
         </Router>
         <Toaster />
       </QueryClientProvider>
