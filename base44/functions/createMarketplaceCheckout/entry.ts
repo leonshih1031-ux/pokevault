@@ -39,7 +39,7 @@ export default async function(req) {
     //   total       = cardPrice + platformFee        ← buyer pays this
     //   sellerGets  = cardPrice - platformFee        ← seller receives this
     //   appFee      = total - sellerGets = 2 * fee   ← platform retains this
-    const feePercent = listing.platform_fee || 6;
+    const feePercent = listing.platform_fee || 3;
     const cardPrice = Math.round((listing.asking_price || 0) * 100);
     const platformFee = Math.round(cardPrice * feePercent / 100);
     const totalAmount = cardPrice + platformFee;

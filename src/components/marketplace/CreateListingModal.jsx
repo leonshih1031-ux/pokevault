@@ -64,7 +64,7 @@ export default function CreateListingModal({ open, onOpenChange, listing, onSave
       card_id: card.id, name: card.name, set_id: card.set?.id, set_name: card.set?.name, number: card.number,
       image_small: card.images?.small, image_large: card.images?.large, rarity: card.rarity,
       condition: form.condition, variant: form.variant, language: form.language, grading_company: form.grading_company,
-      grade: form.grade, asking_price: Number(form.asking_price), platform_fee: 6, description: form.description,
+      grade: form.grade, asking_price: Number(form.asking_price), platform_fee: 3, description: form.description,
       location: form.location, shipping: form.shipping, status: "active",
     };
     try {

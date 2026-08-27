@@ -89,7 +89,7 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
           </div>
         </div>
         {!mine && (() => {
-          const feePercent = listing.platform_fee || 6;
+          const feePercent = listing.platform_fee || 3;
           const cardPrice = listing.asking_price || 0;
           const platformFee = cardPrice * feePercent / 100;
           const total = cardPrice + platformFee;
