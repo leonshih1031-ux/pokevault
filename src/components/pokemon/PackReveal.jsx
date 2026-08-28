@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Sparkles, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ function CardFront({ card, size = "lg" }) {
   );
 }
 
-export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose }) {
+export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose, settings, onDiscard }) {
   const [pos, setPos] = useState(0);          // next index to pull from the deck
   const [current, setCurrent] = useState(null);
   const [revealed, setRevealed] = useState([]);
@@ -39,6 +39,14 @@ export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose 
   const remaining = pack.length - pos;
   const allDone = pos === pack.length && !current;
   const totalValue = revealed.reduce((s, c) => s + getCardPrice(c), 0) + (current ? getCardPrice(current) : 0);
+
+  // Auto-action when all cards are revealed, driven by user settings.
+  useEffect(() => {
+    if (!allDone) return;
+    if (settings?.auto_add_to_binder) onAddAll(pack);
+    else if (settings?.auto_delete_cards && onDiscard) onDiscard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allDone]);
 
   const celebrate = (card) => {
     if (celebrated.current.has(card.id)) return;
@@ -184,8 +192,13 @@ export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose 
             <Button variant="secondary" onClick={revealAll}>Reveal All</Button>
             <Button variant="ghost" onClick={onClose}>Close</Button>
           </>
+        ) : settings?.auto_add_to_binder || settings?.auto_delete_cards ? (
+          <div className="text-sm text-slate-400">{settings.auto_add_to_binder ? "Adding to binder…" : "Discarding pulls…"}</div>
         ) : (
-          <Button onClick={() => onAddAll(pack)} className="bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]"><Check className="w-4 h-4 mr-1.5" /> Add All to Binder</Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => onAddAll(pack)} className="bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]"><Check className="w-4 h-4 mr-1.5" /> Add All to Binder</Button>
+            <Button variant="ghost" onClick={onClose}><X className="w-4 h-4 mr-1.5" /> Discard</Button>
+          </div>
         )}
       </div>
     </div>

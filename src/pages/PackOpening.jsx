@@ -5,6 +5,7 @@ import { Sparkles, Loader2, History, ChevronRight } from "lucide-react";
 import PackReveal from "@/components/pokemon/PackReveal";
 import { getSets, getSetCards, buildPack, getCardPrice, getChaseCardIds } from "@/lib/pokemonApi";
 import { autoTickFromBinder } from "@/lib/setlist";
+import { getPackSettings, savePackSettings } from "@/lib/packSettings";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function PackOpening() {
@@ -19,6 +20,7 @@ export default function PackOpening() {
   const cacheRef = useRef({});
   const preloadRef = useRef({});
   const { toast } = useToast();
+  const [pkSettings, setPkSettings] = useState(() => getPackSettings());
 
   useEffect(() => {
     getSets()
@@ -130,6 +132,26 @@ export default function PackOpening() {
         </Button>
       </section>
 
+      <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+        <div className="text-xs uppercase tracking-widest text-slate-500 mb-3">Post-pack settings</div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <label className="flex items-center gap-2.5 cursor-pointer flex-1 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+            <input type="checkbox" checked={pkSettings.auto_add_to_binder} onChange={(e) => { const s = { ...pkSettings, auto_add_to_binder: e.target.checked, auto_delete_cards: e.target.checked ? false : pkSettings.auto_delete_cards }; setPkSettings(s); savePackSettings(s); }} className="w-4 h-4 accent-emerald-500" />
+            <div>
+              <div className="text-sm font-medium">Auto-add to binder</div>
+              <div className="text-[11px] text-slate-500">Cards are added automatically after reveal</div>
+            </div>
+          </label>
+          <label className="flex items-center gap-2.5 cursor-pointer flex-1 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+            <input type="checkbox" checked={pkSettings.auto_delete_cards} onChange={(e) => { const s = { ...pkSettings, auto_delete_cards: e.target.checked, auto_add_to_binder: e.target.checked ? false : pkSettings.auto_add_to_binder }; setPkSettings(s); savePackSettings(s); }} className="w-4 h-4 accent-emerald-500" />
+            <div>
+              <div className="text-sm font-medium">Auto-discard pulls</div>
+              <div className="text-[11px] text-slate-500">Cards are discarded after reveal</div>
+            </div>
+          </label>
+        </div>
+      </section>
+
       <section>
         <div className="flex items-center gap-2 mb-3"><History className="w-4 h-4 text-slate-500" /><div className="text-xs uppercase tracking-widest text-slate-500">Recent pulls</div></div>
         {history.length === 0 ? (
@@ -154,7 +176,7 @@ export default function PackOpening() {
         )}
       </section>
 
-      {pack && <PackReveal pack={pack} setName={selectedSet?.name} chaseIds={chaseIds} onAddAll={addAll} onClose={() => setPack(null)} />}
+      {pack && <PackReveal pack={pack} setName={selectedSet?.name} chaseIds={chaseIds} onAddAll={addAll} onClose={() => setPack(null)} onDiscard={() => setPack(null)} settings={pkSettings} />}
     </div>
   );
 }

@@ -44,6 +44,35 @@ export default async function(req) {
     if (body?.tracking_number) update.tracking_number = body.tracking_number;
     await base44.asServiceRole.entities.Order.update(orderId, update);
 
+    // Email the buyer and seller when the order hits a shipping milestone.
+    if (status === 'shipped' || status === 'delivered') {
+      try {
+        const order = await base44.asServiceRole.entities.Order.get(orderId);
+        const sellerEmail = user.email;
+        const buyerEmail = order?.buyer_email;
+        const statusLabel = status === 'shipped' ? 'shipped' : 'delivered';
+        const trackingLine = body?.tracking_number ? `\n\nTracking number: ${body.tracking_number}` : '';
+        const carrierLine = body?.shipping_company ? `\nCarrier: ${body.shipping_company}` : '';
+
+        if (buyerEmail) {
+          await base44.integrations.Core.SendEmail({
+            to: buyerEmail,
+            subject: `Your PokeVault order has been ${statusLabel}`,
+            body: `Great news! Your order has been ${statusLabel}.${trackingLine}${carrierLine}\n\nView full order details in your PokeVault Orders page.`,
+          });
+        }
+        if (sellerEmail) {
+          await base44.integrations.Core.SendEmail({
+            to: sellerEmail,
+            subject: `Order ${statusLabel}: shipment update posted`,
+            body: `You marked order ${orderId} as ${statusLabel}.${trackingLine}${carrierLine}`,
+          });
+        }
+      } catch (emailErr) {
+        console.error('Email notification failed:', emailErr);
+      }
+    }
+
     return Response.json({ success: true });
   } catch (error) {
     console.error('updateShipment error:', error);
