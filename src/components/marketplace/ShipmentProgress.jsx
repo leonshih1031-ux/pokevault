@@ -19,8 +19,10 @@ const stageTime = (updates, status) => {
 
 export default function ShipmentProgress({ updates = [], orderStatus }) {
   // Determine the current stage index from the order status.
-  // Orders that are pending_payment / paid / cancelled have not started shipping.
-  const activeIndex = STAGES.findIndex((s) => s.key === orderStatus);
+  // "paid" maps to the Preparing stage (seller hasn't posted updates yet).
+  // pending_payment / cancelled have not started shipping.
+  const statusKey = orderStatus === "paid" ? "preparing" : orderStatus;
+  const activeIndex = STAGES.findIndex((s) => s.key === statusKey);
   const started = activeIndex >= 0 && orderStatus !== "cancelled";
 
   return (
