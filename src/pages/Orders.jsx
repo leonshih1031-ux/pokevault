@@ -7,6 +7,7 @@ import { Loader2, Package, Truck, MapPin, Send, ShoppingBag, Store, ChevronRight
 import { useToast } from "@/components/ui/use-toast";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, SHIPMENT_STATUSES, SHIPPING_COMPANIES } from "@/lib/shipping";
 import ShipmentTracker from "@/components/marketplace/ShipmentTracker";
+import ShipmentProgress from "@/components/marketplace/ShipmentProgress";
 
 export default function Orders() {
   const { toast } = useToast();
@@ -213,9 +214,15 @@ function OrderDetailModal({ order, items, updates, loading, isSeller, onClose, o
                 </div>
               </div>
 
+              {/* Shipment progress stepper */}
+              <div className="space-y-2">
+                <div className="text-sm font-semibold flex items-center gap-1.5"><Package className="w-4 h-4 text-emerald-400" /> Delivery Progress</div>
+                <ShipmentProgress updates={updates} orderStatus={order.status} />
+              </div>
+
               {/* Shipment tracking timeline */}
               <div className="space-y-2">
-                <div className="text-sm font-semibold flex items-center gap-1.5"><Package className="w-4 h-4 text-emerald-400" /> Shipment Tracking</div>
+                <div className="text-sm font-semibold flex items-center gap-1.5"><Truck className="w-4 h-4 text-emerald-400" /> Tracking History</div>
                 <ShipmentTracker updates={updates} orderStatus={order.status} />
               </div>
 
