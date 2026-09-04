@@ -1,5 +1,6 @@
 import { Outlet, NavLink } from "react-router-dom";
 import { Home, Sparkles, BookOpen, Search, Heart, Store, ListChecks, Bell, Camera, Newspaper, Package } from "lucide-react";
+import CartButton from "@/components/marketplace/CartButton";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
@@ -45,6 +46,9 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="px-3 pb-2">
+          <CartButton variant="sidebar" />
+        </div>
         <div className="p-4 text-[11px] text-slate-600 border-t border-white/5">Live data via Pokémon TCG API</div>
       </aside>
       <div className="flex-1 min-w-0 flex flex-col">
@@ -57,6 +61,9 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="px-3 py-2 md:hidden">
+          <CartButton variant="sidebar" />
+        </div>
         <main className="flex-1 p-4 md:p-8 max-w-[1400px] w-full mx-auto">
           <Outlet />
         </main>
