@@ -45,6 +45,14 @@ export default async function(req) {
         return Response.json({ error: 'One or more sellers have not connected Stripe for payouts' }, { status: 400 });
     }
 
+    // Calculate combined shipping — all cards ship in one package.
+    const expressCarriers = ['DHL Express', 'FedEx', 'UPS', 'EMS'];
+    const isExpress = expressCarriers.includes(shippingCompany);
+    const shippingBase = isExpress ? 6.99 : 3.99;
+    const shippingPerExtra = isExpress ? 0.75 : 0.50;
+    const shippingCost = listings.length > 0 ? shippingBase + (listings.length - 1) * shippingPerExtra : 0;
+    const shippingCents = Math.round(shippingCost * 100);
+
     // Calculate totals (all in cents)
     let totalAmount = 0;
     let platformFeeTotal = 0;
@@ -68,6 +76,7 @@ export default async function(req) {
         status: 'preparing',
       };
     });
+    totalAmount += shippingCents;
 
     // Create pending Order
     const order = await base44.asServiceRole.entities.Order.create({
@@ -82,6 +91,7 @@ export default async function(req) {
       shipping_company: shippingCompany,
       total_amount: totalAmount / 100,
       platform_fee_total: platformFeeTotal / 100,
+      shipping_cost: shippingCost,
       items_count: orderItems.length,
       status: 'pending_payment',
       notes: body?.notes || '',
@@ -115,6 +125,13 @@ export default async function(req) {
       if (desc) params.append(`line_items[${i}][price_data][product_data][description]`, desc);
       if (l.image_small) params.append(`line_items[${i}][price_data][product_data][images][0]`, l.image_small);
     });
+
+    // Shipping line item (combined — one package for all cards)
+    const shipIdx = listings.length;
+    params.append(`line_items[${shipIdx}][quantity]`, '1');
+    params.append(`line_items[${shipIdx}][price_data][currency]`, 'usd');
+    params.append(`line_items[${shipIdx}][price_data][unit_amount]`, String(shippingCents));
+    params.append(`line_items[${shipIdx}][price_data][product_data][name]`, `Shipping (${shippingCompany})`);
 
     params.append('metadata[base44_app_id]', appId || '');
     params.append('metadata[order_id]', order.id);

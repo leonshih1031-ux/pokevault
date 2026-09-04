@@ -53,3 +53,15 @@ export const ORDER_STATUS_COLORS = {
 };
 
 export const SHIPMENT_STATUSES = ["preparing", "shipped", "in_transit", "delivered"];
+
+export const EXPRESS_CARRIERS = ["DHL Express", "FedEx", "UPS", "EMS"];
+
+// Combined shipping: one package for all cards in the order.
+// Base rate covers the package + first card; each additional card adds a small increment.
+export function calculateShipping(itemCount, shippingCompany) {
+  if (itemCount <= 0) return 0;
+  const isExpress = EXPRESS_CARRIERS.includes(shippingCompany);
+  const base = isExpress ? 6.99 : 3.99;
+  const perExtra = isExpress ? 0.75 : 0.50;
+  return base + (itemCount - 1) * perExtra;
+}

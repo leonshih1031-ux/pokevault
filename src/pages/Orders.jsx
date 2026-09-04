@@ -200,6 +200,17 @@ function OrderDetailModal({ order, items, updates, loading, isSeller, onClose, o
                 ))}
               </div>
 
+              {/* Cost breakdown */}
+              <div className="space-y-2">
+                <div className="text-sm font-semibold">Order Summary</div>
+                <div className="rounded-lg bg-white/5 p-3 space-y-1.5 text-sm">
+                  <div className="flex justify-between"><span className="text-slate-400">Items ({order.items_count})</span><span>${((order.total_amount || 0) - (order.shipping_cost || 0) - (order.platform_fee_total || 0)).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Platform fees</span><span>${(order.platform_fee_total || 0).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-400">Shipping</span><span>${(order.shipping_cost || 0).toFixed(2)}</span></div>
+                  <div className="flex justify-between font-bold border-t border-white/10 pt-1.5"><span>Total</span><span className="text-emerald-400">${(order.total_amount || 0).toFixed(2)}</span></div>
+                </div>
+              </div>
+
               {/* Shipping address */}
               <div className="space-y-2">
                 <div className="text-sm font-semibold flex items-center gap-1.5"><MapPin className="w-4 h-4 text-emerald-400" /> Shipping Address</div>

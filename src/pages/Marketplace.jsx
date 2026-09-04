@@ -183,6 +183,7 @@ export default function Marketplace() {
                 <span className="text-slate-400">Subtotal</span>
                 <span className="font-bold">${items.reduce((s, i) => s + (i.asking_price || 0), 0).toFixed(2)}</span>
               </div>
+              <div className="text-[11px] text-slate-500 flex items-center gap-1.5"><Truck className="w-3 h-3" /> Combined shipping calculated at checkout — all cards ship in one package</div>
             </div>
           )}
           {items.length > 0 && (

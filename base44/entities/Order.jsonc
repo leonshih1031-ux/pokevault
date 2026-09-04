@@ -38,6 +38,9 @@
     "platform_fee_total": {
       "type": "number"
     },
+    "shipping_cost": {
+      "type": "number"
+    },
     "items_count": {
       "type": "integer"
     },

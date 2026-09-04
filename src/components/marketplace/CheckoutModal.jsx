@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Truck, Package, MapPin } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useCart } from "@/lib/cartContext";
-import { SHIPPING_COMPANIES, COUNTRIES } from "@/lib/shipping";
+import { SHIPPING_COMPANIES, COUNTRIES, calculateShipping } from "@/lib/shipping";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function CheckoutModal({ open, onOpenChange, onPlaced }) {
@@ -42,7 +42,8 @@ export default function CheckoutModal({ open, onOpenChange, onPlaced }) {
 
   const subtotal = items.reduce((s, i) => s + (i.asking_price || 0), 0);
   const fees = items.reduce((s, i) => s + (i.asking_price * (i.platform_fee || 3) / 100), 0);
-  const total = subtotal + fees;
+  const shippingCost = shippingCompany ? calculateShipping(items.length, shippingCompany) : 0;
+  const total = subtotal + fees + shippingCost;
 
   const submit = async () => {
     if (window.self !== window.top) {
@@ -141,6 +142,8 @@ export default function CheckoutModal({ open, onOpenChange, onPlaced }) {
             <div className="rounded-lg bg-white/5 p-3 space-y-1.5 text-sm">
               <div className="flex justify-between"><span className="text-slate-400">Subtotal ({items.length} items)</span><span>${subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-slate-400">Platform fees</span><span>${fees.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Shipping {shippingCompany ? `(${shippingCompany})` : ""}</span><span>{shippingCompany ? `$${shippingCost.toFixed(2)}` : "Select carrier"}</span></div>
+              <div className="text-[11px] text-slate-500 pl-1">Combined shipping — all cards ship in one package</div>
               <div className="flex justify-between font-bold border-t border-white/10 pt-1.5"><span>Total</span><span className="text-emerald-400">${total.toFixed(2)}</span></div>
             </div>
           </div>
