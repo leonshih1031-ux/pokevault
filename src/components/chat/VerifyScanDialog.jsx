@@ -39,9 +39,14 @@ export default function VerifyScanDialog({ open, onOpenChange, listing, onShareR
 
   const shareResult = () => {
     if (!result) return;
-    const summary = result.overall_match
-      ? `✅ Card verified — matches listing (${Math.round((result.confidence || 0) * 100)}% confidence)${result.notes ? `\n${result.notes}` : ""}`
-      : `⚠️ Verification alert: ${result.notes || "Possible mismatch with listing"}`;
+    let summary;
+    if (result.scam_flag) {
+      summary = `🚨 SCAM FLAG: Internet image detected${result.internet_source_site ? ` (source: ${result.internet_source_site})` : ""}. The proof photo appears to be a stock image from the web, not a real photo of the physical card. ${result.scam_detail || ""}`;
+    } else if (result.overall_match) {
+      summary = `✅ Card verified — matches listing (${Math.round((result.confidence || 0) * 100)}% confidence)${result.notes ? `\n${result.notes}` : ""}`;
+    } else {
+      summary = `⚠️ Verification alert: ${result.notes || "Possible mismatch with listing"}`;
+    }
     onShareResult?.(summary);
     onOpenChange(false);
     reset();
@@ -65,20 +70,52 @@ export default function VerifyScanDialog({ open, onOpenChange, listing, onShareR
               <div className="flex items-center justify-center gap-2 text-sm text-slate-400"><Loader2 className="w-4 h-4 animate-spin" /> Verifying…</div>
             ) : result ? (
               <div className="space-y-2">
-                <div className={`flex items-center gap-2 rounded-lg p-3 ${result.overall_match ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-300"}`}>
-                  {result.overall_match ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
-                  <div>
-                    <div className="font-medium">{result.overall_match ? "Card matches listing" : "Possible mismatch"}</div>
-                    <div className="text-xs opacity-80">{Math.round((result.confidence || 0) * 100)}% confidence</div>
+                {result.scam_flag ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 rounded-lg p-3 bg-red-500/15 text-red-300 border border-red-500/30">
+                      <AlertCircle className="w-5 h-5 shrink-0" />
+                      <div>
+                        <div className="font-medium">🚨 Scam flag — internet image detected</div>
+                        <div className="text-xs opacity-80">The uploaded photo matches an online source, not a real card.</div>
+                      </div>
+                    </div>
+                    {result.internet_source_site && (
+                      <div className="text-xs text-slate-400">
+                        <span className="text-slate-500">Matched on:</span>{" "}
+                        <span className="text-red-300 font-medium">{result.internet_source_site}</span>
+                        {result.internet_source_url && (
+                          <a href={result.internet_source_url} target="_blank" rel="noreferrer" className="ml-2 text-emerald-400 underline break-all">{result.internet_source_url}</a>
+                        )}
+                      </div>
+                    )}
+                    {result.scam_detail && <div className="text-xs text-slate-400">{result.scam_detail}</div>}
+                    <div className="text-xs text-amber-300/80 bg-amber-500/5 rounded p-2 border border-amber-500/10">
+                      A legitimate proof photo should show a real physical card in the seller's hand — glare, background, perspective — not a clean digital scan.
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <Match label="Name" ok={result.name_match} />
-                  <Match label="Set" ok={result.set_match} />
-                  <Match label="Number" ok={result.number_match} />
-                </div>
-                {result.condition_assessment && <div className="text-xs text-slate-400"><span className="text-slate-500">Condition:</span> {result.condition_assessment}</div>}
-                {result.notes && <div className="text-xs text-slate-400">{result.notes}</div>}
+                ) : (
+                  <>
+                    <div className={`flex items-center gap-2 rounded-lg p-3 ${result.overall_match ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-300"}`}>
+                      {result.overall_match ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+                      <div>
+                        <div className="font-medium">{result.overall_match ? "Card matches listing" : "Possible mismatch"}</div>
+                        <div className="text-xs opacity-80">{Math.round((result.confidence || 0) * 100)}% confidence</div>
+                      </div>
+                    </div>
+                    {result.internet_image_detected === false && (
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-400/70">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Internet image check passed — photo appears genuine
+                      </div>
+                    )}
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <Match label="Name" ok={result.name_match} />
+                      <Match label="Set" ok={result.set_match} />
+                      <Match label="Number" ok={result.number_match} />
+                    </div>
+                    {result.condition_assessment && <div className="text-xs text-slate-400"><span className="text-slate-500">Condition:</span> {result.condition_assessment}</div>}
+                    {result.notes && <div className="text-xs text-slate-400">{result.notes}</div>}
+                  </>
+                )}
               </div>
             ) : null}
             {!scanning && <Button onClick={() => fileRef.current?.click()} variant="outline" className="w-full border-white/10 text-slate-300 hover:text-slate-300">Scan another</Button>}
