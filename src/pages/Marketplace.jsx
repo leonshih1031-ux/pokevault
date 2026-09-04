@@ -81,12 +81,12 @@ export default function Marketplace() {
         </div>
         <div className="flex items-center gap-2">
           {me && !me.seller_stripe_account_id && (
-            <Button onClick={connectStripe} variant="outline" disabled={connecting} className="border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/10">
+            <Button onClick={connectStripe} variant="outline" disabled={connecting} className="border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/10 hover:text-emerald-300">
               {connecting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CreditCard className="w-4 h-4 mr-1.5" />}
               Connect Stripe
             </Button>
           )}
-          <Button onClick={() => setAddressOpen(true)} variant="outline" className="border-white/10 text-slate-300 hover:bg-white/5">
+          <Button onClick={() => setAddressOpen(true)} variant="outline" className="border-white/10 text-slate-300 hover:bg-white/5 hover:text-slate-300">
             <MapPin className="w-4 h-4 mr-1.5" /> My Address
           </Button>
           <CartButton variant="header" />

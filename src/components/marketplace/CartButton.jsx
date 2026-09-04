@@ -69,7 +69,7 @@ export default function CartButton({ variant = "sidebar" }) {
           {count > 0 && <span className="absolute right-3 bg-emerald-500 text-[#0e1014] text-[10px] font-bold min-w-5 h-5 px-1 rounded-full grid place-items-center">{count}</span>}
         </button>
       ) : (
-        <Button onClick={() => setCartOpen(true)} variant="outline" className="border-white/10 text-slate-300 hover:bg-white/5 relative">
+        <Button onClick={() => setCartOpen(true)} variant="outline" className="border-white/10 text-slate-300 hover:bg-white/5 hover:text-slate-300 relative">
           <ShoppingCart className="w-4 h-4 mr-1.5" /> Cart
           {count > 0 && <span className="absolute -top-1.5 -right-1.5 bg-emerald-500 text-[#0e1014] text-[10px] font-bold w-5 h-5 rounded-full grid place-items-center">{count}</span>}
         </Button>
