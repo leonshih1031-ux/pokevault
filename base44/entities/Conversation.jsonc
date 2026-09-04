@@ -1,0 +1,88 @@
+{
+  "name": "Conversation",
+  "type": "object",
+  "properties": {
+    "listing_id": {
+      "type": "string"
+    },
+    "listing_name": {
+      "type": "string"
+    },
+    "listing_image": {
+      "type": "string"
+    },
+    "listing_price": {
+      "type": "number"
+    },
+    "seller_id": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "buyer_id": {
+      "type": "string"
+    },
+    "buyer_name": {
+      "type": "string"
+    },
+    "last_message": {
+      "type": "string"
+    },
+    "last_message_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_sender_id": {
+      "type": "string"
+    },
+    "buyer_unread": {
+      "type": "integer",
+      "default": 0
+    },
+    "seller_unread": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "listing_id",
+    "seller_id",
+    "buyer_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.buyer_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        }
+      ]
+    },
+    "create": {
+      "data.buyer_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.buyer_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.buyer_id": "{{user.id}}"
+        },
+        {
+          "data.seller_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}

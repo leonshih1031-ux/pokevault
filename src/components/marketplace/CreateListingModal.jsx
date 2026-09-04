@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search as SearchIcon } from "lucide-react";
+import { Loader2, Search as SearchIcon, Camera, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { searchCards, getCardPrice, CONDITIONS, VARIANTS, GRADE_COMPANIES } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,6 +19,9 @@ export default function CreateListingModal({ open, onOpenChange, listing, onSave
   const [card, setCard] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
+  const [proofPhotos, setProofPhotos] = useState([]);
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const proofRef = useRef(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,8 +30,9 @@ export default function CreateListingModal({ open, onOpenChange, listing, onSave
       setCard({ id: listing.card_id, name: listing.name, set: { id: listing.set_id, name: listing.set_name }, number: listing.number, images: { small: listing.image_small, large: listing.image_large }, rarity: listing.rarity });
       setStep("details");
       setForm({ condition: listing.condition || "Near Mint", variant: listing.variant || "Normal", language: listing.language || "English", grading_company: listing.grading_company || "Raw", grade: listing.grade || "", asking_price: String(listing.asking_price ?? ""), description: listing.description || "", location: listing.location || "", shipping: listing.shipping || "" });
+      setProofPhotos(listing.proof_photos || []);
     } else {
-      setStep("search"); setQuery(""); setResults([]); setCard(null); setForm(EMPTY);
+      setStep("search"); setQuery(""); setResults([]); setCard(null); setForm(EMPTY); setProofPhotos([]);
     }
   }, [open, listing]);
 
@@ -53,6 +57,20 @@ export default function CreateListingModal({ open, onOpenChange, listing, onSave
 
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const uploadProof = async (files) => {
+    if (!files || !files.length) return;
+    setUploadingProof(true);
+    try {
+      const urls = [];
+      for (const file of Array.from(files).slice(0, 4 - proofPhotos.length)) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        urls.push(file_url);
+      }
+      setProofPhotos((p) => [...p, ...urls]);
+    } catch {}
+    setUploadingProof(false);
+  };
+
   const submit = async () => {
     if (!card) return;
     if (!form.asking_price || Number(form.asking_price) <= 0) {
@@ -65,7 +83,7 @@ export default function CreateListingModal({ open, onOpenChange, listing, onSave
       image_small: card.images?.small, image_large: card.images?.large, rarity: card.rarity,
       condition: form.condition, variant: form.variant, language: form.language, grading_company: form.grading_company,
       grade: form.grade, asking_price: Number(form.asking_price), platform_fee: 3, description: form.description,
-      location: form.location, shipping: form.shipping, status: "active",
+      location: form.location, shipping: form.shipping, proof_photos: proofPhotos, status: "active",
     };
     try {
       if (editing) await base44.entities.MarketplaceListing.update(listing.id, payload);
@@ -117,6 +135,24 @@ export default function CreateListingModal({ open, onOpenChange, listing, onSave
                 <Field label="Shipping"><Input value={form.shipping} onChange={upd("shipping")} placeholder="e.g. $3 worldwide" className="bg-white/5 border-white/10" /></Field>
               </div>
               <Field label="Description"><textarea value={form.description} onChange={upd("description")} rows={2} placeholder="Condition notes, bundle deals, etc." className="bg-white/5 border border-white/10 rounded-md w-full px-3 py-2 text-sm" /></Field>
+              <div>
+                <Label className="text-[11px] uppercase tracking-wide text-slate-400">Proof photos (anti-scam)</Label>
+                <p className="text-[10px] text-slate-500 mb-2">Upload real photos of your card so buyers know it's legit. Up to 4.</p>
+                <input ref={proofRef} type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => uploadProof(e.target.files)} />
+                <div className="flex flex-wrap gap-2">
+                  {proofPhotos.map((url, i) => (
+                    <div key={i} className="relative w-16 h-20 rounded-lg overflow-hidden border border-white/10">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => setProofPhotos((p) => p.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 bg-red-500 rounded-full p-0.5"><X className="w-2.5 h-2.5 text-white" /></button>
+                    </div>
+                  ))}
+                  {proofPhotos.length < 4 && (
+                    <button type="button" onClick={() => proofRef.current?.click()} disabled={uploadingProof} className="w-16 h-20 rounded-lg border-2 border-dashed border-white/10 hover:border-emerald-400/40 grid place-items-center text-slate-500 hover:text-emerald-400">
+                      {uploadingProof ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                    </button>
+                  )}
+                </div>
+              </div>
               {!editing && <Button variant="ghost" size="sm" onClick={() => setStep("search")} className="text-slate-400">← Change card</Button>}
             </div>
           </div>

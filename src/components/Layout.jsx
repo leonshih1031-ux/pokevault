@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from "react-router-dom";
-import { Home, Sparkles, BookOpen, Search, Heart, Store, ListChecks, Bell, Camera, Newspaper, Package } from "lucide-react";
+import { Home, Sparkles, BookOpen, Search, Heart, Store, ListChecks, Bell, Camera, Newspaper, Package, MessageSquare } from "lucide-react";
 import CartButton from "@/components/marketplace/CartButton";
 
 const nav = [
@@ -9,6 +9,7 @@ const nav = [
   { to: "/search", label: "Search", icon: Search, end: false },
   { to: "/wishlist", label: "Wishlist", icon: Heart, end: false },
   { to: "/marketplace", label: "Marketplace", icon: Store, end: false },
+  { to: "/messages", label: "Messages", icon: MessageSquare, end: false },
   { to: "/orders", label: "Orders", icon: Package, end: false },
   { to: "/setlist", label: "Set List", icon: ListChecks, end: false },
   { to: "/alerts", label: "Alerts", icon: Bell, end: false },

@@ -79,6 +79,13 @@
     "description": {
       "type": "string"
     },
+    "proof_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Real photos of the physical card uploaded by the seller as proof of ownership and condition"
+    },
     "status": {
       "type": "string",
       "enum": [

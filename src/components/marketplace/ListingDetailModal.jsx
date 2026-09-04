@@ -1,14 +1,19 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trash2, Pencil, BadgeCheck, MapPin, Truck, Mail, Loader2, ShoppingCart, Check } from "lucide-react";
+import { Trash2, Pencil, BadgeCheck, MapPin, Truck, Mail, Loader2, ShoppingCart, Check, MessageSquare, ShieldCheck } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getRarityStyle } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
 import { useCart } from "@/lib/cartContext";
+import { Image } from "@/components/ui/image";
+import VerifyScanDialog from "@/components/chat/VerifyScanDialog";
 
 export default function ListingDetailModal({ open, onOpenChange, listing, mine, onChanged, onEdit }) {
   const [busy, setBusy] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { addItem, has } = useCart();
   if (!listing) return null;
@@ -49,7 +54,13 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
     onOpenChange(false);
   };
 
+  const messageSeller = () => {
+    onOpenChange(false);
+    navigate(`/messages?listing=${listing.id}`);
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#181b22] border-white/10 text-slate-100 max-w-2xl">
         <DialogHeader><DialogTitle className="font-display">{listing.name}</DialogTitle></DialogHeader>
@@ -75,6 +86,20 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
               {listing.shipping && <div className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> {listing.shipping}</div>}
               <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Contact seller: {listing.created_by || "—"}</div>
             </div>
+            {listing.proof_photos?.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="text-[11px] uppercase tracking-wide text-slate-400 flex items-center gap-1.5"><ShieldCheck className="w-3 h-3 text-emerald-400" /> Proof photos</div>
+                <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1">
+                  {listing.proof_photos.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noreferrer" className="shrink-0">
+                      <div className="w-20 h-28 rounded-lg overflow-hidden border border-white/10">
+                        <Image src={url} alt={`proof ${i + 1}`} fittingType="fit" className="w-full h-full" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         {!mine && (() => {
@@ -92,6 +117,10 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
               <Button onClick={addToCart} disabled={inCart} className="w-full bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]">
                 {inCart ? <><Check className="w-4 h-4 mr-1.5" /> In Cart</> : <><ShoppingCart className="w-4 h-4 mr-1.5" /> Add to Cart · ${total.toFixed(2)}</>}
               </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button onClick={messageSeller} variant="outline" className="border-white/10 text-slate-300 hover:bg-white/5 hover:text-slate-300"><MessageSquare className="w-4 h-4 mr-1.5" /> Message</Button>
+                <Button onClick={() => setVerifyOpen(true)} variant="outline" className="border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/10 hover:text-emerald-300"><ShieldCheck className="w-4 h-4 mr-1.5" /> Verify</Button>
+              </div>
             </div>
           );
         })()}
@@ -104,5 +133,7 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
         )}
       </DialogContent>
     </Dialog>
+    <VerifyScanDialog open={verifyOpen} onOpenChange={setVerifyOpen} listing={listing} />
+    </>
   );
 }
