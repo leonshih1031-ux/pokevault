@@ -46,6 +46,14 @@ export default async function(req) {
       const secretKey = Deno.env.get('STRIPE_SECRET_KEY');
       const appId = Deno.env.get('BASE44_APP_ID');
 
+      // Idempotency: if the order is already paid, this is a duplicate webhook
+      // delivery from Stripe — skip transfers and listing updates to avoid
+      // double-paying sellers.
+      const existingOrder = await base44.asServiceRole.entities.Order.get(orderId);
+      if (existingOrder?.status === 'paid' || existingOrder?.status === 'shipped' || existingOrder?.status === 'delivered') {
+        return Response.json({ received: true, duplicate: true });
+      }
+
       // Update order status to paid
       await base44.asServiceRole.entities.Order.update(orderId, { status: 'paid' });
 

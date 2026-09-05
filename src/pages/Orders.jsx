@@ -54,16 +54,18 @@ export default function Orders() {
   }, []);
 
   const openOrder = async (order) => {
-    setSelectedOrder(order);
     setLoadingDetail(true);
     try {
-      const [items, updates] = await Promise.all([
+      const [freshOrder, items, updates] = await Promise.all([
+        base44.entities.Order.get(order.id),
         base44.entities.OrderItem.filter({ order_id: order.id }),
         base44.entities.ShipmentUpdate.filter({ order_id: order.id }),
       ]);
+      setSelectedOrder(freshOrder);
       setDetailItems(items.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
       setDetailUpdates(updates.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
     } catch {
+      setSelectedOrder(order);
       toast({ title: "Could not load order details", variant: "destructive" });
     } finally {
       setLoadingDetail(false);

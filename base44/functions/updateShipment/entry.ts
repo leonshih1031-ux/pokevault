@@ -16,8 +16,11 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const orderId = body?.order_id;
     const status = body?.status;
+    const validStatuses = ['preparing', 'shipped', 'in_transit', 'delivered'];
     if (!orderId || !status)
       return Response.json({ error: 'order_id and status are required' }, { status: 400 });
+    if (!validStatuses.includes(status))
+      return Response.json({ error: 'Invalid status. Must be one of: ' + validStatuses.join(', ') }, { status: 400 });
 
     // Verify this seller has items in this order
     const orderItems = await base44.asServiceRole.entities.OrderItem.filter({

@@ -12,9 +12,11 @@ export default async function(req) {
     let checked = 0, triggered = 0;
     for (const a of alerts) {
       const card = await fetchCard(a.card_id);
+      if (!card) continue; // API failure — skip, retry next run (don't corrupt with price=0)
       const price = getCardPrice(card);
+      if (!price || price <= 0) continue; // no price data available — skip
       const hit = a.direction === "below"
-        ? price > 0 && price <= a.target_price
+        ? price <= a.target_price
         : price >= a.target_price;
       await base44.asServiceRole.entities.PriceAlert.update(a.id, {
         last_price: price,

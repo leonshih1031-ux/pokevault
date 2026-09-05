@@ -97,10 +97,10 @@ export default async function(req) {
       notes: body?.notes || '',
     });
 
-    // Create OrderItems
-    for (const item of orderItems) {
-      await base44.asServiceRole.entities.OrderItem.create({ ...item, order_id: order.id });
-    }
+    // Create OrderItems (bulk — one call instead of N)
+    await base44.asServiceRole.entities.OrderItem.bulkCreate(
+      orderItems.map((item) => ({ ...item, order_id: order.id }))
+    );
 
     // Create Stripe Checkout session (platform collects, transfers done in webhook)
     const secretKey = Deno.env.get('STRIPE_SECRET_KEY');
