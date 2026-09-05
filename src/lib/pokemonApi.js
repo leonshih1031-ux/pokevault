@@ -10,6 +10,20 @@ export const CONDITIONS = ["Mint", "Near Mint", "Lightly Played", "Moderately Pl
 export const VARIANTS = ["Normal", "Reverse Holo", "Holo", "1st Edition", "Promo"];
 export const GRADE_COMPANIES = ["Raw", "PSA", "BGS", "CGC", "ACE", "Other"];
 
+// Numeric rarity tier for sorting — higher = rarer. Mirrors getRarityStyle's
+// categorization so the rarest cards always surface first.
+export function rarityRank(rarity = "") {
+  const r = (rarity || "").toLowerCase();
+  if (r.includes("secret") || r.includes("rainbow")) return 90;
+  if (r.includes("special illustration")) return 85;
+  if (r.includes("ultra") || r.includes("vmax") || r.includes("vstar") || r === "v" || r.endsWith(" ex") || r.endsWith(" gx") || r.includes("ace spec")) return 75;
+  if (r.includes("illustration") || r.includes("special")) return 65;
+  if (r.includes("holo") || r.includes("reverse") || r.includes("shiny") || r.includes("shining") || r.includes("prism")) return 50;
+  if (r.includes("rare")) return 30;
+  if (r.includes("uncommon")) return 15;
+  return 5;
+}
+
 export function getRarityStyle(rarity = "") {
   const r = (rarity || "").toLowerCase();
   if (r.includes("secret") || r.includes("rainbow")) return { color: "#fb7185", glow: "rgba(251,113,133,0.55)" };
