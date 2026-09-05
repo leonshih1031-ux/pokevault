@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Button } from "@/components/ui/button";
-import { Newspaper, Loader2, RefreshCw, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Image } from "@/components/ui/image";
+import NewsBanner from "@/components/news/NewsBanner";
 
 const CACHE_KEY = "pk_news_cache_v3";
 const CACHE_TTL = 30 * 60 * 1000;
@@ -46,16 +46,7 @@ export default function News() {
 
   return (
     <div className="space-y-6 pk-fade-up">
-      <section className="relative rounded-2xl overflow-hidden border border-white/5 h-44 md:h-56">
-        <Image src="https://media.base44.com/images/public/6a74924d098c137cf967c644/fee4c98f0_generated_image.png" alt="Pokémon TCG" className="absolute inset-0 w-full h-full" fittingType="fill" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0b0d10] via-[#0b0d10]/60 to-transparent" />
-        <div className="absolute inset-0 flex flex-col justify-end p-5 md:p-7">
-          <div className="text-xs uppercase tracking-widest text-emerald-400 flex items-center gap-1.5 mb-1"><Newspaper className="w-3.5 h-3.5" /> News & Articles</div>
-          <h1 className="font-bold text-2xl md:text-4xl tracking-tight">Pokémon TCG news</h1>
-          <p className="text-sm text-slate-300 mt-1 max-w-xl">Latest set releases, reveals, price moves, and tournament news — pulled live from the web.</p>
-        </div>
-        <Button variant="outline" onClick={() => load(true)} disabled={refreshing} className="absolute top-4 right-4 bg-black/40 border-white/20 backdrop-blur hover:bg-black/60">{refreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />} Refresh</Button>
-      </section>
+      <NewsBanner onRefresh={() => load(true)} refreshing={refreshing} />
 
       {loading ? (
         <div className="space-y-3">
