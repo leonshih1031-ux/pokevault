@@ -68,3 +68,31 @@ export async function fetchCard(id) {
   }
   return null;
 }
+
+// Fetch all cards in a set via paginated calls (250/page). Far more efficient
+// than fetching individual cards when many tracked cards share a set.
+export async function fetchSetCards(setId) {
+  const all = [];
+  for (let page = 1; page <= 6; page++) {
+    const params = new URLSearchParams({ q: `set.id:${setId}`, page: String(page), pageSize: "250" });
+    const url = `https://api.pokemontcg.io/v2/cards?${params.toString()}`;
+    let json = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const res = await fetch(url, { headers: { Accept: "application/json" } });
+        if (res.ok) { json = await res.json(); break; }
+        if (res.status === 429 || res.status >= 500) {
+          await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+          continue;
+        }
+        break; // 4xx (non-429): no point retrying
+      } catch {
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+      }
+    }
+    if (!json?.data) break;
+    all.push(...json.data);
+    if (json.data.length < 250) break;
+  }
+  return all;
+}
