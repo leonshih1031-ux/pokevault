@@ -11,6 +11,7 @@ import Layout from '@/components/Layout';
 import Home from '@/pages/Home';
 import PackOpening from '@/pages/PackOpening';
 import Binder from '@/pages/Binder';
+import Pokedex from '@/pages/Pokedex';
 import SearchPage from '@/pages/Search';
 import Wishlist from '@/pages/Wishlist';
 import Marketplace from '@/pages/Marketplace';
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Home />} />
         <Route path="/packs" element={<PackOpening />} />
         <Route path="/binder" element={<Binder />} />
+        <Route path="/pokedex" element={<Pokedex />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/marketplace" element={<Marketplace />} />

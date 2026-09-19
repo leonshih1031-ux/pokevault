@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { getSetCards, getRarityStyle } from "@/lib/pokemonApi";
+import SetRarityBreakdown, { buildRarityStats } from "@/components/setlist/SetRarityBreakdown";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function SetChecklistView({ set, onBack }) {
@@ -71,6 +72,9 @@ export default function SetChecklistView({ set, onBack }) {
         </div>
       </header>
       <div className="h-2 rounded-full bg-white/5 overflow-hidden"><div className="h-full bg-gradient-to-r from-emerald-400 to-blue-500 transition-all" style={{ width: `${pct}%` }} /></div>
+      {!loading && cards.length > 0 && (
+        <SetRarityBreakdown stats={buildRarityStats(cards, checked)} />
+      )}
       {loading ? (
         <div className="h-48 grid place-items-center"><Loader2 className="w-6 h-6 animate-spin text-slate-500" /></div>
       ) : (

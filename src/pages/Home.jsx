@@ -5,6 +5,8 @@ import { Sparkles, BookOpen, Search as SearchIcon, TrendingUp, TrendingDown, Lay
 import { getRarityStyle } from "@/lib/pokemonApi";
 import PortfolioChart from "@/components/portfolio/PortfolioChart";
 import MoversSection from "@/components/portfolio/MoversSection";
+import GradeWorthySection from "@/components/portfolio/GradeWorthySection";
+import CollectionInsights from "@/components/portfolio/CollectionInsights";
 
 const money = (n) => `$${(n || 0).toFixed(2)}`;
 
@@ -74,6 +76,8 @@ export default function Home() {
       </div>
 
       <PortfolioChart snapshots={snapshots} />
+      <CollectionInsights items={items} />
+      <GradeWorthySection items={items} />
       <MoversSection items={items} />
 
       <div className="grid lg:grid-cols-3 gap-5">

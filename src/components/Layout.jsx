@@ -1,11 +1,12 @@
 import { Outlet, NavLink } from "react-router-dom";
-import { Home, Sparkles, BookOpen, Search, Heart, Store, ListChecks, Bell, Camera, Newspaper, Package, MessageSquare } from "lucide-react";
+import { Home, Sparkles, BookOpen, Search, Heart, Store, ListChecks, Bell, Camera, Newspaper, Package, MessageSquare, Grid3x3 } from "lucide-react";
 import CartButton from "@/components/marketplace/CartButton";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: Home, end: true },
   { to: "/packs", label: "Pack Opening", icon: Sparkles, end: false },
   { to: "/binder", label: "Binder", icon: BookOpen, end: false },
+  { to: "/pokedex", label: "Pokédex", icon: Grid3x3, end: false },
   { to: "/search", label: "Search", icon: Search, end: false },
   { to: "/wishlist", label: "Wishlist", icon: Heart, end: false },
   { to: "/marketplace", label: "Marketplace", icon: Store, end: false },
