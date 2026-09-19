@@ -44,7 +44,7 @@ export default function Messages() {
     try {
       const listing = await base44.entities.MarketplaceListing.get(listingId);
       const sellerId = listing.created_by_id;
-      const sellerName = listing.created_by || "Seller";
+      const sellerName = "Seller";
       const existing = await base44.entities.Conversation.filter({ buyer_id: me.id, seller_id: sellerId, listing_id: listingId });
       if (existing.length) {
         setActiveId(existing[0].id);

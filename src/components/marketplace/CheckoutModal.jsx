@@ -66,11 +66,11 @@ export default function CheckoutModal({ open, onOpenChange, onPlaced }) {
         shipping_company: shippingCompany,
         notes,
       });
-      if (res.url) {
+      if (res.data?.url) {
         clear();
-        window.location.href = res.url;
+        window.location.href = res.data.url;
       } else {
-        toast({ title: res.error || "Could not start checkout", variant: "destructive" });
+        toast({ title: res.data?.error || "Could not start checkout", variant: "destructive" });
       }
     } catch (err) {
       toast({ title: err.message || "Could not start checkout", variant: "destructive" });

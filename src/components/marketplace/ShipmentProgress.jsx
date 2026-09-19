@@ -43,7 +43,7 @@ export default function ShipmentProgress({ updates = [], orderStatus }) {
                 {i > 0 && (
                   <div
                     className="absolute right-1/2 top-4 h-0.5 w-1/2"
-                    style={{ background: isDone ? color : "rgba(255,255,255,0.08)" }}
+                    style={{ background: isDone || isCurrent ? color : "rgba(255,255,255,0.08)" }}
                   />
                 )}
                 {/* connector line after (right) */}

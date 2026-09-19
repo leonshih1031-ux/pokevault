@@ -84,7 +84,7 @@ export default function ListingDetailModal({ open, onOpenChange, listing, mine, 
             <div className="space-y-1 text-xs text-slate-400">
               {listing.location && <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {listing.location}</div>}
               {listing.shipping && <div className="flex items-center gap-1.5"><Truck className="w-3.5 h-3.5" /> {listing.shipping}</div>}
-              <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Contact seller: {listing.created_by || "—"}</div>
+              <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> Use the Message button to contact the seller</div>
             </div>
             {listing.proof_photos?.length > 0 && (
               <div className="space-y-1.5">

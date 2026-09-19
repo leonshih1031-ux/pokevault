@@ -48,6 +48,11 @@
     "phone": {
       "type": "string",
       "description": "Phone number for shipping contact"
+    },
+    "auto_tick_setlist": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether set checklist auto-ticks from binder additions"
     }
   },
   "required": [

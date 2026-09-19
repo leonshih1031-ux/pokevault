@@ -54,7 +54,7 @@ export default function Marketplace() {
     setConnecting(true);
     try {
       const res = await base44.functions.invoke("createSellerStripeAccount", {});
-      if (res.url) window.location.href = res.url;
+      if (res.data?.url) window.location.href = res.data.url;
     } catch {
       toast({ title: "Could not connect Stripe", variant: "destructive" });
     } finally {
@@ -73,13 +73,13 @@ export default function Marketplace() {
 
   return (
     <div className="space-y-6 pk-fade-up">
-      <header className="flex items-center justify-between gap-4">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="text-xs uppercase tracking-widest text-emerald-400 flex items-center gap-1.5"><Store className="w-3.5 h-3.5" /> Marketplace</div>
           <h1 className="font-bold text-2xl md:text-3xl">Card marketplace</h1>
           <p className="text-sm text-slate-400">Buy, sell, and trade cards with other collectors.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {me && !me.seller_stripe_account_id && (
             <Button onClick={connectStripe} variant="outline" disabled={connecting} className="border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/10 hover:text-emerald-300">
               {connecting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CreditCard className="w-4 h-4 mr-1.5" />}
