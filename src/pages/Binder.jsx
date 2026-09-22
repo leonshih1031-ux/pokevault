@@ -2,10 +2,11 @@ import { useEffect, useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon, Plus, Loader2, TrendingUp, TrendingDown, Layers, RefreshCw, Share2 } from "lucide-react";
+import { Search as SearchIcon, Plus, Loader2, TrendingUp, TrendingDown, Layers, RefreshCw, Share2, CheckSquare, X, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import EditCollectionModal from "@/components/pokemon/EditCollectionModal";
 import ShareBinderModal from "@/components/binder/ShareBinderModal";
+import BulkEditModal from "@/components/binder/BulkEditModal";
 import { getSets, getRarityStyle, CONDITIONS, fetchCardPrices } from "@/lib/pokemonApi";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -22,6 +23,9 @@ export default function Binder() {
   const [editing, setEditing] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selected, setSelected] = useState(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -87,6 +91,12 @@ export default function Binder() {
   const refresh = async () => { const list = await base44.entities.CollectionCard.list("-updated_date", 500); setItems(list); };
   const onSaved = async () => { setEditing(null); await refresh(); };
 
+  const toggleSelect = (id) => setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const selectAll = () => setSelected(new Set(filtered.map((c) => c.id)));
+  const clearSelection = () => setSelected(new Set());
+  const exitBulkMode = () => { setBulkMode(false); clearSelection(); };
+  const onBulkDone = async () => { clearSelection(); await refresh(); };
+
   const refreshPrices = async () => {
     setRefreshing(true);
     try {
@@ -112,6 +122,15 @@ export default function Binder() {
           <h1 className="font-bold text-2xl md:text-3xl">Your Binder</h1>
         </div>
         <div className="flex gap-2">
+          {!bulkMode ? (
+            <Button variant="secondary" className="bg-white/5" onClick={() => setBulkMode(true)} disabled={items.length === 0}>
+              <CheckSquare className="w-4 h-4 mr-1.5" /> Bulk Edit
+            </Button>
+          ) : (
+            <Button variant="secondary" className="bg-white/5" onClick={exitBulkMode}>
+              <X className="w-4 h-4 mr-1.5" /> Exit
+            </Button>
+          )}
           <Button variant="secondary" className="bg-white/5" onClick={() => setShareOpen(true)}><Share2 className="w-4 h-4 mr-1.5" /> Share</Button>
           <Button variant="secondary" className="bg-white/5" onClick={refreshPrices} disabled={refreshing || items.length === 0}>
             <RefreshCw className={`w-4 h-4 mr-1.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh Prices
@@ -142,6 +161,19 @@ export default function Binder() {
         </select>
       </div>
 
+      {bulkMode && filtered.length > 0 && (
+        <div className="sticky top-2 z-20 flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 backdrop-blur">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-emerald-400">{selected.size} selected</span>
+            <button onClick={selectAll} className="text-xs text-slate-300 hover:text-white">Select all</button>
+            <button onClick={clearSelection} className="text-xs text-slate-300 hover:text-white">Clear</button>
+          </div>
+          <Button size="sm" className="bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]" disabled={selected.size === 0} onClick={() => setBulkOpen(true)}>
+            <CheckSquare className="w-3.5 h-3.5 mr-1.5" /> Edit {selected.size > 0 ? selected.size : ""} card{selected.size === 1 ? "" : "s"}
+          </Button>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="text-center py-16 rounded-2xl border border-dashed border-white/10">
           <div className="text-slate-400 mb-1">Your binder is empty</div>
@@ -170,13 +202,23 @@ export default function Binder() {
                   {cards.map((c) => {
                     const style = getRarityStyle(c.rarity);
                     const val = (c.current_price || 0) * (c.quantity || 1);
+                    const isSel = selected.has(c.id);
                     return (
-                      <button key={c.id} onClick={() => setEditing(c)} className="group relative rounded-xl overflow-hidden border border-white/5 bg-white/[0.02] hover:border-white/20 transition pk-fade-up">
+                      <button
+                        key={c.id}
+                        onClick={() => bulkMode ? toggleSelect(c.id) : setEditing(c)}
+                        className={`group relative rounded-xl overflow-hidden border bg-white/[0.02] transition pk-fade-up ${bulkMode ? (isSel ? "border-emerald-500 ring-2 ring-emerald-500/40" : "border-white/5 hover:border-white/20") : "border-white/5 hover:border-white/20"}`}
+                      >
                         <div className="aspect-[3/4] relative">
                           <img src={c.image_small} alt={c.name} className="w-full h-full object-cover" loading="lazy" />
                           <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded-md bg-black/70 text-[10px] font-bold text-white">×{c.quantity}</div>
                           {c.condition && c.condition !== "Near Mint" && <div className="absolute bottom-1 left-1 px-1 py-0.5 rounded bg-black/70 text-[8px] text-slate-300">{c.condition}</div>}
                           <div className="absolute inset-0 ring-1 ring-inset" style={{ boxShadow: `inset 0 0 18px ${style.glow}` }} />
+                          {bulkMode && (
+                            <div className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-md border-2 flex items-center justify-center transition ${isSel ? "bg-emerald-500 border-emerald-500" : "bg-black/60 border-white/40"}`}>
+                              {isSel && <Check className="w-3 h-3 text-[#0e1014]" strokeWidth={4} />}
+                            </div>
+                          )}
                         </div>
                         <div className="p-2">
                           <div className="text-[11px] font-medium leading-tight line-clamp-1">{c.name}</div>
@@ -196,6 +238,7 @@ export default function Binder() {
       )}
 
       {editing && <EditCollectionModal entry={editing} open={!!editing} onOpenChange={(o) => !o && onSaved()} />}
+      <BulkEditModal selectedIds={[...selected]} open={bulkOpen} onOpenChange={setBulkOpen} onDone={onBulkDone} />
       <ShareBinderModal open={shareOpen} onOpenChange={setShareOpen} />
     </div>
   );
