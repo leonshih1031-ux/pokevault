@@ -312,13 +312,16 @@ export function hasGodPacks(setId, setName = "") {
   return GOD_PACK_SET_NAMES.some((re) => re.test(setName));
 }
 
-// 30th Celebration (me55) — a special 5-card pack with unique rarities and a
-// Classic Collection subset (me55c) pulled at 1/10. Pull rates per TCGplayer's
-// 3,000-pack study (pokebeach.com, Sep 2026):
-//   Illustration Rare 1/5 · Classic Collection 1/10 · Special Illustration Rare
-//   1/21 · Futuristic Rare 1/120 · RGB Mew ~1/1000 (gold territory).
-// Double Rare (ex) estimated ~1/3. The RGB Mew secrets are tagged "Common" in
-// the API but numbered R/G/B — they are pulled out into their own bucket.
+// 30th Celebration (me55) — a special 5-foil-card pack. Structure per
+// TCGplayer's 3,000-pack study (Sep 2026) and pokebeach.com set guide:
+//   Slot 1-2: Commons (bulk)
+//   Slot 3:   Rare | Illustration Rare (~1/5) | Classic Collection (~1/10)
+//   Slot 4:   Rare | Double Rare (~1/5) | SIR (~1/21) | Futuristic Rare (~1/120)
+//             | RGB Mew (~1/1000+)
+//   Slot 5:   GUARANTEED Pikachu Rare (1 of 30 unique Pikachu illustrations)
+// Every card is foil. The RGB Mew secrets are tagged "Common" in the API but
+// numbered R/G/B — pulled out into their own bucket. Classic Collection cards
+// live in the me55c subset and are merged into the pool for the slot-3 hit.
 const CELEBRATION_NAME = /30th celebration/i;
 const CLASSIC_COLLECTION_NAME = /classic collection/i;
 
@@ -334,7 +337,7 @@ function categorize30th(setCards) {
     const r = c.rarity || "";
     const num = c.number || "";
     if (sid === "me55c" || CLASSIC_COLLECTION_NAME.test(r)) { b.classic.push(c); continue; }
-    if (["R", "G", "B"].includes(num)) { b.rgbMew.push(c); continue; }
+    if (/^(R|G|B)(\/RGB)?$/.test(num)) { b.rgbMew.push(c); continue; }
     if (r === "Futuristic Rare") b.fur.push(c);
     else if (r === "Special Illustration Rare") b.sir.push(c);
     else if (r === "Illustration Rare") b.illus.push(c);
@@ -349,21 +352,35 @@ function categorize30th(setCards) {
 
 function build30thPack(setCards) {
   const b = categorize30th(setCards);
-  const bulkPool = [...b.common, ...b.pika];
-  const bulkSrc = bulkPool.length ? bulkPool : (b.rare.length ? b.rare : setCards);
+  const commonPool = b.common.length ? b.common : (b.rare.length ? b.rare : setCards);
+  const rarePool = b.rare.length ? b.rare : (b.doubleRare.length ? b.doubleRare : commonPool);
   const pack = [];
-  for (let i = 0; i < 4; i++) pack.push(pick(bulkSrc));                 // 4 bulk cards
-  const roll = Math.random();                                           // hit slot
-  let slot;
-  if (roll < 0.001 && b.rgbMew.length) slot = pick(b.rgbMew);           // ~1/1000
-  else if (roll < 0.0093 && b.fur.length) slot = pick(b.fur);           // ~1/120
-  else if (roll < 0.0569 && b.sir.length) slot = pick(b.sir);           // ~1/21
-  else if (roll < 0.1569 && b.classic.length) slot = pick(b.classic);  // ~1/10
-  else if (roll < 0.3569 && b.illus.length) slot = pick(b.illus);       // ~1/5
-  else if (roll < 0.6869 && b.doubleRare.length) slot = pick(b.doubleRare); // ~1/3
-  else slot = pick(b.rare.length ? b.rare : (b.doubleRare.length ? b.doubleRare : bulkSrc)); // holo rare
-  pack.push(slot);
-  return pack; // 5 cards: 4 bulk + 1 hit (climax last)
+
+  // Slots 1-2: Commons (bulk)
+  for (let i = 0; i < 2; i++) pack.push(pick(commonPool));
+
+  // Slot 3: Rare | Illustration Rare (~1/5) | Classic Collection (~1/10)
+  const roll3 = Math.random();
+  let slot3;
+  if (roll3 < 0.1015 && b.classic.length) slot3 = pick(b.classic);       // ~1/10
+  else if (roll3 < 0.2987 && b.illus.length) slot3 = pick(b.illus);      // ~1/5
+  else slot3 = pick(rarePool);
+  pack.push(slot3);
+
+  // Slot 4: Rare | Double Rare (~1/5) | SIR (~1/21) | Futuristic Rare (~1/120) | RGB (~1/1000)
+  const roll4 = Math.random();
+  let slot4;
+  if (roll4 < 0.001 && b.rgbMew.length) slot4 = pick(b.rgbMew);         // ~1/1000
+  else if (roll4 < 0.0093 && b.fur.length) slot4 = pick(b.fur);          // ~1/120
+  else if (roll4 < 0.0581 && b.sir.length) slot4 = pick(b.sir);           // ~1/21
+  else if (roll4 < 0.2683 && b.doubleRare.length) slot4 = pick(b.doubleRare); // ~1/5 (21%)
+  else slot4 = pick(rarePool);
+  pack.push(slot4);
+
+  // Slot 5: GUARANTEED Pikachu Rare (1 of 30 unique Pikachu illustrations)
+  pack.push(b.pika.length ? pick(b.pika) : pick(rarePool));
+
+  return pack; // 5 cards: 2 commons → rare/IR/CC → rare/DR/SIR/FUR/RGB → guaranteed Pikachu
 }
 
 // Builds a 10-card pack in legit reveal order: commons → uncommons → reverse →
