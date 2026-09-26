@@ -20,7 +20,7 @@ export default function Binder() {
   const [query, setQuery] = useState("");
   const [setFilter, setSetFilter] = useState("all");
   const [condFilter, setCondFilter] = useState("all");
-  const [folderFilter, setFolderFilter] = useState("all");
+  const [folderFilter, setFolderFilter] = useState("Main");
   const [editing, setEditing] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -148,6 +148,11 @@ export default function Binder() {
         <Stat label="Gain / Loss" value={`${stats.gain >= 0 ? "+" : ""}${money(stats.gain)}`} sub={`${stats.pct >= 0 ? "+" : ""}${stats.pct.toFixed(1)}%`} accent={stats.gain >= 0 ? "text-emerald-400" : "text-red-400"} icon={stats.gain >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />} />
       </div>
 
+      <div className="flex gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/5 w-fit">
+        <button onClick={() => setFolderFilter("Main")} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${folderFilter === "Main" ? "bg-emerald-500 text-[#0e1014]" : "text-slate-400 hover:text-white"}`}>Main Binder</button>
+        <button onClick={() => setFolderFilter("Digital Pulls")} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${folderFilter === "Digital Pulls" ? "bg-emerald-500 text-[#0e1014]" : "text-slate-400 hover:text-white"}`}>Digital Pulls</button>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[180px]">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -160,10 +165,6 @@ export default function Binder() {
         <select value={condFilter} onChange={(e) => setCondFilter(e.target.value)} className="bg-white/[0.03] border border-white/10 rounded-lg px-3 text-sm h-10">
           <option value="all">All conditions</option>
           {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={folderFilter} onChange={(e) => setFolderFilter(e.target.value)} className="bg-white/[0.03] border border-white/10 rounded-lg px-3 text-sm h-10">
-          <option value="all">All folders</option>
-          {[...new Set(items.map((i) => i.folder || "Main"))].map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
       </div>
 
