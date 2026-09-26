@@ -20,6 +20,7 @@ export default function Binder() {
   const [query, setQuery] = useState("");
   const [setFilter, setSetFilter] = useState("all");
   const [condFilter, setCondFilter] = useState("all");
+  const [folderFilter, setFolderFilter] = useState("all");
   const [editing, setEditing] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -78,9 +79,10 @@ export default function Binder() {
   const filtered = useMemo(() => items.filter((i) => {
     if (setFilter !== "all" && i.set_id !== setFilter) return false;
     if (condFilter !== "all" && i.condition !== condFilter) return false;
+    if (folderFilter !== "all" && (i.folder || "Main") !== folderFilter) return false;
     if (query && !i.name.toLowerCase().includes(query.toLowerCase())) return false;
     return true;
-  }), [items, setFilter, condFilter, query]);
+  }), [items, setFilter, condFilter, folderFilter, query]);
 
   const grouped = useMemo(() => {
     const g = {};
@@ -158,6 +160,10 @@ export default function Binder() {
         <select value={condFilter} onChange={(e) => setCondFilter(e.target.value)} className="bg-white/[0.03] border border-white/10 rounded-lg px-3 text-sm h-10">
           <option value="all">All conditions</option>
           {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select value={folderFilter} onChange={(e) => setFolderFilter(e.target.value)} className="bg-white/[0.03] border border-white/10 rounded-lg px-3 text-sm h-10">
+          <option value="all">All folders</option>
+          {[...new Set(items.map((i) => i.folder || "Main"))].map((f) => <option key={f} value={f}>{f}</option>)}
         </select>
       </div>
 

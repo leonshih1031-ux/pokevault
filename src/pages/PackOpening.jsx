@@ -5,7 +5,7 @@ import { Sparkles, Loader2, History, ChevronRight } from "lucide-react";
 import PackReveal from "@/components/pokemon/PackReveal";
 import { getSets, getSetCards, buildPack, getCardPrice, getChaseCardIds } from "@/lib/pokemonApi";
 import { autoTickFromBinder } from "@/lib/setlist";
-import { getPackSettings, savePackSettings } from "@/lib/packSettings";
+import { getPackSettings, savePackSettings, PULL_DESTINATIONS } from "@/lib/packSettings";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function PackOpening() {
@@ -78,15 +78,24 @@ export default function PackOpening() {
   };
 
   const addAll = async (cards) => {
+    const dest = pkSettings.pull_destination || "manual";
+    if (dest === "none") { setPack(null); return; }
     try {
       const today = new Date().toISOString().slice(0, 10);
-      await base44.entities.CollectionCard.bulkCreate(cards.map((c) => ({
+      const buildRecord = (c, folder) => ({
         card_id: c.id, name: c.name, set_id: c.set?.id, set_name: c.set?.name, number: c.number,
         image_small: c.images?.small, image_large: c.images?.large, rarity: c.rarity, types: c.types || [], supertype: c.supertype,
         quantity: 1, condition: "Near Mint", variant: "Normal", language: "English", grading_company: "Raw",
-        purchase_price: getCardPrice(c), date_acquired: today, current_price: getCardPrice(c), folder: "Main",
-      })));
-      toast({ title: `Added ${cards.length} cards to your binder` });
+        purchase_price: getCardPrice(c), date_acquired: today, current_price: getCardPrice(c), folder,
+      });
+      const records = [];
+      if (dest === "main" || dest === "both") records.push(...cards.map((c) => buildRecord(c, "Main")));
+      if (dest === "digital" || dest === "both") records.push(...cards.map((c) => buildRecord(c, "Digital Pulls")));
+      // "manual" defaults to Main when triggered by the manual Add button
+      if (dest === "manual") records.push(...cards.map((c) => buildRecord(c, "Main")));
+      await base44.entities.CollectionCard.bulkCreate(records);
+      const folderLabel = dest === "both" ? "Main + Digital Pulls" : dest === "digital" ? "Digital Pulls" : "Main";
+      toast({ title: `Added ${cards.length} cards to ${folderLabel}` });
       autoTickFromBinder(cards);
       setPack(null);
     } catch { toast({ title: "Could not add cards", variant: "destructive" }); }
@@ -133,22 +142,15 @@ export default function PackOpening() {
       </section>
 
       <section className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-        <div className="text-xs uppercase tracking-widest text-slate-500 mb-3">Post-pack settings</div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <label className="flex items-center gap-2.5 cursor-pointer flex-1 rounded-xl border border-white/5 bg-white/[0.02] p-3">
-            <input type="checkbox" checked={pkSettings.auto_add_to_binder} onChange={(e) => { const s = { ...pkSettings, auto_add_to_binder: e.target.checked, auto_delete_cards: e.target.checked ? false : pkSettings.auto_delete_cards }; setPkSettings(s); savePackSettings(s); }} className="w-4 h-4 accent-emerald-500" />
-            <div>
-              <div className="text-sm font-medium">Auto-add to binder</div>
-              <div className="text-[11px] text-slate-500">Cards are added automatically after reveal</div>
-            </div>
-          </label>
-          <label className="flex items-center gap-2.5 cursor-pointer flex-1 rounded-xl border border-white/5 bg-white/[0.02] p-3">
-            <input type="checkbox" checked={pkSettings.auto_delete_cards} onChange={(e) => { const s = { ...pkSettings, auto_delete_cards: e.target.checked, auto_add_to_binder: e.target.checked ? false : pkSettings.auto_add_to_binder }; setPkSettings(s); savePackSettings(s); }} className="w-4 h-4 accent-emerald-500" />
-            <div>
-              <div className="text-sm font-medium">Auto-discard pulls</div>
-              <div className="text-[11px] text-slate-500">Cards are discarded after reveal</div>
-            </div>
-          </label>
+        <div className="text-xs uppercase tracking-widest text-slate-500 mb-3">Pull destination</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          {PULL_DESTINATIONS.map((d) => (
+            <button key={d.value} onClick={() => { const s = { ...pkSettings, pull_destination: d.value }; setPkSettings(s); savePackSettings(s); }}
+              className={`text-left rounded-xl border p-3 transition ${pkSettings.pull_destination === d.value ? "border-emerald-400/60 bg-emerald-400/5" : "border-white/5 bg-white/[0.02] hover:border-white/15"}`}>
+              <div className="text-sm font-medium">{d.label}</div>
+              <div className="text-[11px] text-slate-500">{d.desc}</div>
+            </button>
+          ))}
         </div>
       </section>
 

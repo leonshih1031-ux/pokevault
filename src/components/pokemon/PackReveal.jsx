@@ -43,8 +43,11 @@ export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose,
   // Auto-action when all cards are revealed, driven by user settings.
   useEffect(() => {
     if (!allDone) return;
-    if (settings?.auto_add_to_binder) onAddAll(pack);
-    else if (settings?.auto_delete_cards && onDiscard) onDiscard();
+    const dest = settings?.pull_destination;
+    if (dest && dest !== "manual") {
+      if (dest === "none") { if (onDiscard) onDiscard(); }
+      else onAddAll(pack);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allDone]);
 
@@ -192,8 +195,8 @@ export default function PackReveal({ pack, setName, chaseIds, onAddAll, onClose,
             <Button variant="secondary" onClick={revealAll}>Reveal All</Button>
             <Button variant="ghost" onClick={onClose}>Close</Button>
           </>
-        ) : settings?.auto_add_to_binder || settings?.auto_delete_cards ? (
-          <div className="text-sm text-slate-400">{settings.auto_add_to_binder ? "Adding to binder…" : "Discarding pulls…"}</div>
+        ) : settings?.pull_destination && settings.pull_destination !== "manual" ? (
+          <div className="text-sm text-slate-400">{settings.pull_destination === "none" ? "Discarding pulls…" : "Adding to binder…"}</div>
         ) : (
           <div className="flex items-center gap-3">
             <Button onClick={() => onAddAll(pack)} className="bg-emerald-500 hover:bg-emerald-400 text-[#0e1014]"><Check className="w-4 h-4 mr-1.5" /> Add All to Binder</Button>
