@@ -312,6 +312,60 @@ export function hasGodPacks(setId, setName = "") {
   return GOD_PACK_SET_NAMES.some((re) => re.test(setName));
 }
 
+// 30th Celebration (me55) — a special 5-card pack with unique rarities and a
+// Classic Collection subset (me55c) pulled at 1/10. Pull rates per TCGplayer's
+// 3,000-pack study (pokebeach.com, Sep 2026):
+//   Illustration Rare 1/5 · Classic Collection 1/10 · Special Illustration Rare
+//   1/21 · Futuristic Rare 1/120 · RGB Mew ~1/1000 (gold territory).
+// Double Rare (ex) estimated ~1/3. The RGB Mew secrets are tagged "Common" in
+// the API but numbered R/G/B — they are pulled out into their own bucket.
+const CELEBRATION_NAME = /30th celebration/i;
+const CLASSIC_COLLECTION_NAME = /classic collection/i;
+
+export function isCelebrationSet(setId, setName = "") {
+  if (setId === "me55") return true;
+  return CELEBRATION_NAME.test(setName) && !CLASSIC_COLLECTION_NAME.test(setName);
+}
+
+function categorize30th(setCards) {
+  const b = { common: [], pika: [], rare: [], doubleRare: [], illus: [], sir: [], fur: [], rgbMew: [], classic: [] };
+  for (const c of setCards) {
+    const sid = c.set?.id;
+    const r = c.rarity || "";
+    const num = c.number || "";
+    if (sid === "me55c" || CLASSIC_COLLECTION_NAME.test(r)) { b.classic.push(c); continue; }
+    if (["R", "G", "B"].includes(num)) { b.rgbMew.push(c); continue; }
+    if (r === "Futuristic Rare") b.fur.push(c);
+    else if (r === "Special Illustration Rare") b.sir.push(c);
+    else if (r === "Illustration Rare") b.illus.push(c);
+    else if (r === "Double Rare") b.doubleRare.push(c);
+    else if (r === "Pikachu Rare") b.pika.push(c);
+    else if (r === "Rare") b.rare.push(c);
+    else if (r === "Common") b.common.push(c);
+    else b.common.push(c);
+  }
+  return b;
+}
+
+function build30thPack(setCards) {
+  const b = categorize30th(setCards);
+  const bulkPool = [...b.common, ...b.pika];
+  const bulkSrc = bulkPool.length ? bulkPool : (b.rare.length ? b.rare : setCards);
+  const pack = [];
+  for (let i = 0; i < 4; i++) pack.push(pick(bulkSrc));                 // 4 bulk cards
+  const roll = Math.random();                                           // hit slot
+  let slot;
+  if (roll < 0.001 && b.rgbMew.length) slot = pick(b.rgbMew);           // ~1/1000
+  else if (roll < 0.0093 && b.fur.length) slot = pick(b.fur);           // ~1/120
+  else if (roll < 0.0569 && b.sir.length) slot = pick(b.sir);           // ~1/21
+  else if (roll < 0.1569 && b.classic.length) slot = pick(b.classic);  // ~1/10
+  else if (roll < 0.3569 && b.illus.length) slot = pick(b.illus);       // ~1/5
+  else if (roll < 0.6869 && b.doubleRare.length) slot = pick(b.doubleRare); // ~1/3
+  else slot = pick(b.rare.length ? b.rare : (b.doubleRare.length ? b.doubleRare : bulkSrc)); // holo rare
+  pack.push(slot);
+  return pack; // 5 cards: 4 bulk + 1 hit (climax last)
+}
+
 // Builds a 10-card pack in legit reveal order: commons → uncommons → reverse →
 // rare/hit. Hit odds follow community-documented SV-era pull rates:
 //   Secret Rare ~1/200 · Special Illustration ~1/65 · Ultra Rare ~1/12 ·
@@ -323,6 +377,8 @@ export function hasGodPacks(setId, setName = "") {
 // (including Crown Zenith and normal sets), the standard rarity distribution
 // is used — no god packs ever.
 export function buildPack(setCards, setId = "", setName = "") {
+  // 30th Celebration uses a unique 5-card pack structure.
+  if (isCelebrationSet(setId, setName)) return build30thPack(setCards);
   const b = categorizeByRarity(setCards);
 
   // God Pack check: only for confirmed sets, ~1 in 700 odds.

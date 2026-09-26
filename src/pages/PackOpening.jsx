@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, History, ChevronRight } from "lucide-react";
 import PackReveal from "@/components/pokemon/PackReveal";
-import { getSets, getSetCards, buildPack, getCardPrice, getChaseCardIds } from "@/lib/pokemonApi";
+import { getSets, getSetCards, buildPack, getCardPrice, getChaseCardIds, isCelebrationSet } from "@/lib/pokemonApi";
 import { autoTickFromBinder } from "@/lib/setlist";
 import { getPackSettings, savePackSettings, PULL_DESTINATIONS } from "@/lib/packSettings";
 import { useToast } from "@/components/ui/use-toast";
@@ -41,7 +41,11 @@ export default function PackOpening() {
     preloadRef.current[selectedSet.id] = (async () => {
       setPreloading(true);
       try {
-        const cards = await getSetCards(selectedSet.id);
+        let cards = await getSetCards(selectedSet.id);
+        // 30th Celebration packs can contain Classic Collection cards (me55c) at 1/10.
+        if (selectedSet.id === "me55") {
+          try { const cc = await getSetCards("me55c"); if (cc?.length) cards = [...cards, ...cc]; } catch {}
+        }
         cacheRef.current[selectedSet.id] = cards;
       } catch {}
       finally { setPreloading(false); }
@@ -60,6 +64,9 @@ export default function PackOpening() {
       }
       for (let attempt = 0; (!cards || !cards.length) && attempt < 3; attempt++) {
         cards = await getSetCards(selectedSet.id);
+        if (selectedSet.id === "me55") {
+          try { const cc = await getSetCards("me55c"); if (cc?.length) cards = [...cards, ...cc]; } catch {}
+        }
         if (cards) cacheRef.current[selectedSet.id] = cards;
       }
       if (!cards || !cards.length) { toast({ title: "Could not load cards for this set — try again", variant: "destructive" }); return; }
@@ -133,7 +140,7 @@ export default function PackOpening() {
         <div className="flex-1">
           <div className="text-sm text-slate-400">Opening</div>
           <div className="font-bold text-xl">{selectedSet?.name}</div>
-          <div className="text-xs text-slate-500 mt-1">10 cards · rarity-weighted · realistic pull rates</div>
+          <div className="text-xs text-slate-500 mt-1">{isCelebrationSet(selectedSet?.id, selectedSet?.name) ? "5 cards · rarity-weighted · realistic pull rates" : "10 cards · rarity-weighted · realistic pull rates"}</div>
         </div>
         <Button size="lg" disabled={opening || !selectedSet} onClick={openPack}
           className="bg-gradient-to-r from-emerald-400 to-blue-500 hover:opacity-90 text-[#0e1014] font-semibold">
