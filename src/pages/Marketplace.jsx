@@ -51,11 +51,25 @@ export default function Marketplace() {
   }, []);
 
   const connectStripe = async () => {
+    const isFramed = window.self !== window.top;
+    const onboardingTab = isFramed ? window.open("", "_blank") : null;
+    if (isFramed && !onboardingTab) {
+      toast({ title: "Allow popups to connect Stripe", variant: "destructive" });
+      return;
+    }
+    if (onboardingTab) onboardingTab.opener = null;
     setConnecting(true);
     try {
       const res = await base44.functions.invoke("createSellerStripeAccount", {});
-      if (res.data?.url) window.location.href = res.data.url;
+      if (res.data?.url) {
+        if (onboardingTab) onboardingTab.location.replace(res.data.url);
+        else window.location.assign(res.data.url);
+      } else {
+        onboardingTab?.close();
+        toast({ title: "Could not connect Stripe", variant: "destructive" });
+      }
     } catch {
+      onboardingTab?.close();
       toast({ title: "Could not connect Stripe", variant: "destructive" });
     } finally {
       setConnecting(false);

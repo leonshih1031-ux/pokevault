@@ -14,7 +14,8 @@ export default async function(req) {
 
     const secretKey = Deno.env.get('STRIPE_SECRET_KEY');
     const appId = Deno.env.get('BASE44_APP_ID');
-    const origin = req.headers.get('origin') || 'https://free-pokevault-collect-pro.base44.app';
+    const origin = req.headers.get('X-Base44-App-Url');
+    if (!origin) return Response.json({ error: 'Missing app URL header — cannot create onboarding link' }, { status: 500 });
 
     let accountId = user.seller_stripe_account_id;
 

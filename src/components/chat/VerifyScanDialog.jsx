@@ -20,7 +20,8 @@ export default function VerifyScanDialog({ open, onOpenChange, listing, onShareR
     setPreview(URL.createObjectURL(file));
     setScanning(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      const file_url = file_uri;
       const res = await base44.functions.invoke("verifyCardScan", {
         file_url,
         listing_name: listing?.name,

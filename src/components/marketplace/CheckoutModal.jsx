@@ -46,10 +46,6 @@ export default function CheckoutModal({ open, onOpenChange, onPlaced }) {
   const total = subtotal + fees + shippingCost;
 
   const submit = async () => {
-    if (window.self !== window.top) {
-      toast({ title: "Checkout works only from a published app", variant: "destructive" });
-      return;
-    }
     if (!form.name || !form.country || !form.address) {
       toast({ title: "Fill in name, country and address", variant: "destructive" });
       return;
@@ -58,6 +54,15 @@ export default function CheckoutModal({ open, onOpenChange, onPlaced }) {
       toast({ title: "Choose a shipping company", variant: "destructive" });
       return;
     }
+    // When framed (builder preview), open checkout in a new tab synchronously
+    // before the async call so popup blockers preserve the user activation.
+    const isFramed = window.self !== window.top;
+    const checkoutTab = isFramed ? window.open("", "_blank") : null;
+    if (isFramed && !checkoutTab) {
+      toast({ title: "Allow popups to continue to checkout", variant: "destructive" });
+      return;
+    }
+    if (checkoutTab) checkoutTab.opener = null;
     setBusy(true);
     try {
       const res = await base44.functions.invoke("createMarketplaceCheckout", {
@@ -68,11 +73,17 @@ export default function CheckoutModal({ open, onOpenChange, onPlaced }) {
       });
       if (res.data?.url) {
         clear();
-        window.location.href = res.data.url;
+        if (checkoutTab) {
+          checkoutTab.location.replace(res.data.url);
+        } else {
+          window.location.assign(res.data.url);
+        }
       } else {
+        checkoutTab?.close();
         toast({ title: res.data?.error || "Could not start checkout", variant: "destructive" });
       }
     } catch (err) {
+      checkoutTab?.close();
       toast({ title: err.message || "Could not start checkout", variant: "destructive" });
     } finally {
       setBusy(false);

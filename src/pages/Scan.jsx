@@ -21,7 +21,8 @@ export default function Scan() {
     if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(file));
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+      const file_url = file_uri;
       const res = await base44.functions.invoke("identifyCard", { file_url });
       const id = res.data?.identity;
       setIdentity(id);

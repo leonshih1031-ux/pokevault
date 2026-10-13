@@ -41,6 +41,8 @@ export default async function(req) {
       const session = event.data?.object;
       const orderId = session?.metadata?.order_id;
       if (!orderId) return Response.json({ received: true });
+      // Skip Base44 merchant self-test charges — not a customer order.
+      if (session?.metadata?.base44_test_checkout === 'true') return Response.json({ received: true });
 
       const base44 = createClientFromRequest(req);
       const secretKey = Deno.env.get('STRIPE_SECRET_KEY');

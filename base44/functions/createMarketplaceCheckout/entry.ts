@@ -105,7 +105,11 @@ export default async function(req) {
     // Create Stripe Checkout session (platform collects, transfers done in webhook)
     const secretKey = Deno.env.get('STRIPE_SECRET_KEY');
     const appId = Deno.env.get('BASE44_APP_ID');
-    const origin = req.headers.get('origin') || 'https://free-pokevault-collect-pro.base44.app';
+    const origin = req.headers.get('X-Base44-App-Url');
+    if (!origin) {
+      await base44.asServiceRole.entities.Order.update(order.id, { status: 'cancelled' });
+      return Response.json({ error: 'Missing app URL header — cannot create checkout' }, { status: 500 });
+    }
 
     const params = new URLSearchParams();
     params.append('mode', 'payment');
