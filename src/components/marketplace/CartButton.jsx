@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ShoppingCart, Trash2, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -8,7 +8,7 @@ import CheckoutModal from "@/components/marketplace/CheckoutModal";
 
 function CartPanel({ cartOpen, setCartOpen, setCheckoutOpen }) {
   const { items, removeItem, clear, count } = useCart();
-  const totalWithFees = items.reduce((s, i) => s + (i.asking_price || 0) + (i.asking_price * (i.platform_fee || 3) / 100), 0);
+  const totalWithFees = items.reduce((s, i) => s + (i.asking_price || 0) + ((i.asking_price || 0) * (i.platform_fee || 3) / 100), 0);
 
   return (
     <Dialog open={cartOpen} onOpenChange={setCartOpen}>
@@ -58,6 +58,13 @@ export default function CartButton({ variant = "sidebar" }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const { count } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Close cart and checkout dialogs when navigating to a new page.
+  useEffect(() => {
+    setCartOpen(false);
+    setCheckoutOpen(false);
+  }, [location.pathname]);
 
   return (
     <>

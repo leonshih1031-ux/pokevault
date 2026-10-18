@@ -63,8 +63,8 @@ export default function CreateListingModal({ open, onOpenChange, listing, onSave
     try {
       const urls = [];
       for (const file of Array.from(files).slice(0, 4 - proofPhotos.length)) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        urls.push(file_url);
+        const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+        urls.push(file_uri);
       }
       setProofPhotos((p) => [...p, ...urls]);
     } catch {}

@@ -89,7 +89,9 @@ export default async function(req) {
               Authorization: `Bearer ${secretKey}`,
               'Content-Type': 'application/x-www-form-urlencoded',
               'Stripe-Version': '2025-10-29.clover',
-              'Idempotency-Key': crypto.randomUUID(),
+              // Deterministic key: if Stripe retries the webhook, the same
+              // transfer is deduplicated instead of double-paying the seller.
+              'Idempotency-Key': `transfer_${orderId}_${sellerId}`,
             },
             body: tp,
           });

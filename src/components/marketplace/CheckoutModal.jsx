@@ -41,7 +41,7 @@ export default function CheckoutModal({ open, onOpenChange, onPlaced }) {
   const upd = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const subtotal = items.reduce((s, i) => s + (i.asking_price || 0), 0);
-  const fees = items.reduce((s, i) => s + (i.asking_price * (i.platform_fee || 3) / 100), 0);
+  const fees = items.reduce((s, i) => s + ((i.asking_price || 0) * (i.platform_fee || 3) / 100), 0);
   const shippingCost = shippingCompany ? calculateShipping(items.length, shippingCompany) : 0;
   const total = subtotal + fees + shippingCost;
 
